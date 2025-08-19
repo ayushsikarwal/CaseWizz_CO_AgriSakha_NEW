@@ -142,7 +142,7 @@ CREWAI_TELEMETRY=false
 
 **JSON File for Translation**
 
-Create a `translation.json` file in the backend folder as well and enter the credentials of the JSON that are present in the source code PDF file.
+Create a `translation.json` file in the `backend` directory and enter the credentials of the JSON that are present in the source code PDF file.
 
 #### Run Backend Services
 
@@ -446,6 +446,7 @@ For support and queries, please reach out through:
 ---
 
 **AgriSakha** - Empowering Farmers with AI-Driven Solutions 🌱
+
 
 
 
