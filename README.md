@@ -140,7 +140,8 @@ LANGCHAIN_ENDPOINT=https://api.smith.langchain.com
 CREWAI_TELEMETRY=false
 ```
 
-Create a translation.json file in the backend folder as well and enter the credentials of the JSON that are present in the source code PDF file.
+**JSON File for Translation**
+Create a `translation.json` file in the backend folder as well and enter the credentials of the JSON that are present in the source code PDF file.
 
 #### Run Backend Services
 
@@ -207,7 +208,7 @@ Create a `.env` file in the `frontend/` directory. (Obtain the API keys through 
 VITE_WEATHER_API_KEY=your_weather_api_key
 ```
 
-Substitute the API keys into the frontend/community-feature-main/src/services/geminiService.ts:
+Substitute the `API keys` into the `frontend/community-feature-main/src/services/geminiService.ts` directory:
 ```env
 GOOGLE_API_KEY = your_gemini_api_key;
 GROQ_API_KEY = your_groq_api_key;
@@ -444,6 +445,7 @@ For support and queries, please reach out through:
 ---
 
 **AgriSakha** - Empowering Farmers with AI-Driven Solutions 🌱
+
 
 
 
