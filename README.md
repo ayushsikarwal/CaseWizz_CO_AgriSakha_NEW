@@ -83,10 +83,9 @@ CaseWizz_CO_AgriSakha/
 ## 🚀 Getting Started (If you face any issues, please do visit the support section below)
 
 ### Prerequisites
-- **Node.js** (v16 or higher)
-- **Python** (v3.8 or higher)
+- **Node.js** 
+- **Python** (ver<=3.12)
 - **Git**
-- **Tesseract OCR** (for document processing)
 - **FFmpeg** (for audio processing)
 - **Google Cloud Platform** You need to enable some APIs like speech to text, text to speech, and translation ones, and corresponding to that, you need to install the JSON file, which will be used a lot in this project. Our given keys have been flagged by GCP and will not work now so you have to generate on your own on GCP console.
 - **API KEYS** Download the source code PDF file from our submission and keep the API keys handy that have been written there.
@@ -446,6 +445,7 @@ For support and queries, please reach out through:
 ---
 
 **AgriSakha** - Empowering Farmers with AI-Driven Solutions 🌱
+
 
 
 
