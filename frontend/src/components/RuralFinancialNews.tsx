@@ -597,7 +597,7 @@ const RuralFinancialNews: React.FC = () => {
               className="flex items-center text-[#fccd03] font-bold"
             >
               <span className="mr-3">📰</span>
-              Financial News
+              Agricultural News
             </a>
             {/* <a
               href="/rural-assistant"
