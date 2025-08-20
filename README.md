@@ -331,7 +331,7 @@ npm run dev
 
 ### Web Application
 1. **Access the main application** at `http://localhost:5173`
-2. **Navigate through modules**:
+2. **Navigate through modules present on the homescreen as cards**:
    - Agriculture: Crop analysis and recommendations
    - Budget: Financial planning tools
    - Loans: Government scheme assistance
@@ -445,6 +445,7 @@ For support and queries, please reach out through:
 ---
 
 **AgriSakha** - Empowering Farmers with AI-Driven Solutions 🌱
+
 
 
 
