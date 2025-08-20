@@ -298,13 +298,7 @@ function App() {
       icon: Globe,
       title: "Schemes Recommendation",
       description: "Discover government and private financial schemes suited to your needs, helping you maximize benefits and savings",
-      path: "/investment-assistant"
-    },
-    {
-      icon: Users2,
-      title: "Micro Investment Recommendation",
-      description: "Receive personalized investment suggestions for small, high-potential opportunities to grow your wealth gradually",
-      path: "/investment-assistant"
+      path: "/loan-assistant"
     },
     {
       icon: Globe,
