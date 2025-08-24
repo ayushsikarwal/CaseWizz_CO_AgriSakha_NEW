@@ -1,5 +1,8 @@
 import { TreeDeciduous } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
+import Header from "./Header";
+import Sidebar from "./Sidebar";
+import Footer from "./Footer";
 
 interface AudioRecordingState {
   isRecording: boolean;
@@ -243,65 +246,10 @@ const EyMain: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-[#fccd03]/30 flex flex-col">
-      {/* Header/Nav */}
-      <nav className="fixed w-full z-50 bg-black/80 backdrop-blur-md border-b border-white/10">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-20">
-            <div className="flex items-center space-x-8">
-              <span className="text-3xl font-extrabold text-[#fccd03] font-sans">AgriSakha</span>
-              <div className="hidden md:flex space-x-8">
-                <a href="#" className="text-white hover:text-[#fccd03] transition-colors font-medium">Home</a>
-                <a href="#" className="text-white hover:text-[#fccd03] transition-colors font-medium">Product</a>
-                <a href="#" className="text-white hover:text-[#fccd03] transition-colors font-medium">Features</a>
-                <a href="#" className="text-white hover:text-[#fccd03] transition-colors font-medium">About</a>
-              </div>
-            </div>
-            {/* <div className="flex items-center space-x-4">
-              <button className="text-white hover:text-[#fccd03] transition-colors px-6 py-2 font-medium">Sign In</button>
-              <button className="bg-[#fccd03] text-black px-6 py-2 rounded-lg font-semibold hover:bg-[#e3b902] transition-colors">
-                Sign Up
-              </button>
-            </div> */}
-          </div>
-        </div>
-      </nav>
+      <Header />
 
       <div className="flex flex-1 justify-center items-center">
-        {/* Sidebar */}
-        <div className="fixed top-0 left-0 h-screen w-64 bg-gradient-to-b from-black to-gray-900 border-r border-white/10">
-        <div className="p-6">
-          <h2 className="text-2xl font-bold text-[#fccd03] mb-6">Menu</h2>
-          <nav className="space-y-4">
-            <a href="/" className="flex items-center text-gray-400 hover:text-white transition-colors duration-300">
-              <span className="mr-3">🏠</span>
-              Home
-            </a>
-            <a href="/rural-financial-news" className="flex items-center text-gray-400 hover:text-white transition-colors duration-300">
-              <span className="mr-3">📰</span>
-              Financial News
-            </a>
-            <a href="/budget-assistant" className="flex items-center text-gray-400 hover:text-white transition-colors duration-300">
-              <span className="mr-3">💰</span>
-              Budget Assistant
-            </a>
-            <a href="/agri-assistant" className="flex items-center text-gray-400 hover:text-white transition-colors duration-300">
-              <span className="mr-3"><TreeDeciduous className="w-5 h-5" /></span>
-              Agricultural Advice
-            </a>
-            <a href="/loan-assistant" className="flex items-center text-gray-400 hover:text-white transition-colors duration-300">
-              <span className="mr-3">💳</span>
-              Loan Assistant
-            </a>
-            <a
-                href="http://localhost:8080/"
-                className="flex items-center text-gray-400 hover:text-white transition-colors duration-300"
-              >
-                <span className="mr-3">💬</span>
-                Community
-              </a>
-          </nav>
-        </div>
-      </div>
+        <Sidebar activePage="home" />
 
         {/* Main Content */}
         <div className="flex-1 ml-64 pt-28 px-12 pb-12">
@@ -418,24 +366,7 @@ const EyMain: React.FC = () => {
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="bg-black/80 backdrop-blur-md border-t border-white/10 text-white py-4 mt-auto">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-wrap items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <span className="text-[#fccd03] font-bold">AgriSakha</span>
-              <span className="text-gray-400">|</span>
-              <span className="text-gray-400 text-sm">Voice Assisted Rural Empowerment Platform</span>
-            </div>
-            <div className="flex items-center space-x-6">
-              <a href="#" className="text-gray-400 hover:text-[#fccd03] transition-colors text-sm">Privacy</a>
-              <a href="#" className="text-gray-400 hover:text-[#fccd03] transition-colors text-sm">Terms</a>
-              <a href="#" className="text-gray-400 hover:text-[#fccd03] transition-colors text-sm">Contact</a>
-              <span className="text-gray-400 text-sm">&copy; 2024 AgriSakha</span>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
 
       {/* Hidden audio element */}
       <audio ref={responseAudioRef} />

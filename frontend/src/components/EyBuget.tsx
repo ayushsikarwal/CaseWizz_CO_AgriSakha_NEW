@@ -1,5 +1,8 @@
 import { TreeDeciduous } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
+import Header from "./Header";
+import Sidebar from "./Sidebar";
+import Footer from "./Footer";
 
 interface SearchResult {
   results: string[];
@@ -167,111 +170,10 @@ const ExpenseEarningsTracker: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-black via-gray-900 to-[#fccd03]/30">
-      {/* Header/Nav */}
-      <nav className="fixed w-full z-50 bg-black/80 backdrop-blur-md border-b border-white/10">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-20">
-            <div className="flex items-center space-x-8">
-              <span className="text-3xl font-extrabold text-[#fccd03] font-sans">
-                  <img src="/logo.png" alt="AgriSakha Logo" className="h-42 w-48 inline-block align-middle" />
-                </span>
-              <div className="hidden md:flex space-x-8">
-                <a
-                  href="#"
-                  className="text-white hover:text-[#fccd03] transition-colors font-medium"
-                >
-                  Home
-                </a>
-                <a
-                  href="#"
-                  className="text-white hover:text-[#fccd03] transition-colors font-medium"
-                >
-                  Product
-                </a>
-                <a
-                  href="#"
-                  className="text-white hover:text-[#fccd03] transition-colors font-medium"
-                >
-                  Features
-                </a>
-                <a
-                  href="#"
-                  className="text-white hover:text-[#fccd03] transition-colors font-medium"
-                >
-                  About
-                </a>
-              </div>
-            </div>
-            {/* <div className="flex items-center space-x-4">
-              <button className="text-white hover:text-[#fccd03] transition-colors px-6 py-2 font-medium">
-                Sign In
-              </button>
-              <button className="bg-[#fccd03] text-black px-6 py-2 rounded-lg font-semibold hover:bg-[#e3b902] transition-colors">
-                Sign Up
-              </button>
-            </div> */}
-          </div>
-        </div>
-      </nav>
+      <Header />
 
       <div className="flex flex-1 py-20">
-        {/* Sidebar */}
-        <div className="fixed top-0 left-0 h-screen w-64 bg-gradient-to-b from-black to-gray-900 border-r border-white/10">
-        <div className="p-6">
-          <h2 className="text-2xl font-bold text-[#fccd03] mb-6">Menu</h2>
-          <nav className="space-y-4">
-            <a
-              href="/"
-              className="flex items-center text-gray-400 hover:text-white transition-colors duration-300"
-            >
-              <span className="mr-3">🏠</span>
-              Home
-            </a>
-            <a
-              href="/rural-financial-news"
-              className="flex items-center text-gray-400 hover:text-white transition-colors duration-300"
-            >
-              <span className="mr-3">📰</span>
-              Financial News
-            </a>
-            {/* <a
-              href="/rural-assistant"
-              className="flex items-center text-gray-400 hover:text-white transition-colors duration-300"
-            >
-              <span className="mr-3">💬</span>
-              Rural Assistant
-            </a> */}
-            <a
-              href="/budget-assistant"
-              className="flex items-center text-[#fccd03] font-bold"
-            >
-              <span className="mr-3">💰</span>
-              Budget Assistant
-            </a>
-            <a
-              href="/loan-assistant"
-              className="flex items-center text-gray-400 hover:text-white transition-colors duration-300"
-            >
-              <span className="mr-3">💳</span>
-              Loan Assistant
-            </a>
-            <a
-              href="/agri-assistant"
-              className="flex items-center text-gray-400 hover:text-white transition-colors duration-300"
-            >
-              <span className="mr-3">📈</span>
-              Agricultural Advisor
-            </a>
-            <a
-                href="http://localhost:8080/"
-                className="flex items-center text-gray-400 hover:text-white transition-colors duration-300"
-              >
-                <span className="mr-3">💬</span>
-                Community
-              </a>
-          </nav>
-        </div>
-      </div>
+        <Sidebar activePage="budget-assistant" />
 
         {/* Content Area */}
         <div className="ml-64 flex-1 p-8 flex gap-8">
@@ -517,42 +419,7 @@ const ExpenseEarningsTracker: React.FC = () => {
         </div>
       </div>
 
-      <footer className="bg-black/80 backdrop-blur-md border-t border-white/10 text-white py-4 mt-auto">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-wrap items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <span className="text-[#fccd03] font-bold">AgriSakha</span>
-              <span className="text-gray-400">|</span>
-              <span className="text-gray-400 text-sm">
-                Voice Assisted Rural Empowerment Platform
-              </span>
-            </div>
-            <div className="flex items-center space-x-6">
-              <a
-                href="#"
-                className="text-gray-400 hover:text-[#fccd03] transition-colors text-sm"
-              >
-                Privacy
-              </a>
-              <a
-                href="#"
-                className="text-gray-400 hover:text-[#fccd03] transition-colors text-sm"
-              >
-                Terms
-              </a>
-              <a
-                href="#"
-                className="text-gray-400 hover:text-[#fccd03] transition-colors text-sm"
-              >
-                Contact
-              </a>
-              <span className="text-gray-400 text-sm">
-                &copy; 2024 AgriSakha
-              </span>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
       {/* Chat Bot Button */}
       <button
         onClick={() => setIsChatOpen(!isChatOpen)}
