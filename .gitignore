@@ -110,3 +110,9 @@ public
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+#translation.json
+/backend/translation.json
+
+#venv
+/backend/venv

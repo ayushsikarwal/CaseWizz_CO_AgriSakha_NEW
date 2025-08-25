@@ -6,6 +6,7 @@ import threading
 import tempfile
 import json
 import io
+import re
 # import pytesseract
 # import re
 from io import BytesIO
@@ -460,6 +461,7 @@ def log_event(message):
 
 # Function from eybud.py
 def process_voice_input(audio_file):
+    import re
     text = transcribe_audio(audio_file)
     translated_text, detected_language = translate_to_english(text)
 
@@ -1025,9 +1027,16 @@ def get_mock_weather_data(region):
     }
 
 def generate_dynamic_irrigation_advice(crop, region, weather_data):
-    """Generate dynamic irrigation advice using LLM"""
+    """Generate dynamic irrigation advice using LLM with robust fallbacks and JSON mode"""
     try:
-        model_agri = genai.GenerativeModel('gemini-2.5-pro') # Using a more capable model for structured output
+        generation_config = {
+            "response_mime_type": "application/json",
+            "temperature": 0.7,
+        }
+
+        # Prefer a fast, reliable JSON-capable model
+        primary_model = genai.GenerativeModel('gemini-2.0-flash', generation_config=generation_config)
+        fallback_model = genai.GenerativeModel('gemini-1.5-flash', generation_config=generation_config)
         
         state_info = INDIAN_STATES.get(region, {"state": "India"})
         state = state_info["state"]
@@ -1048,58 +1057,75 @@ def generate_dynamic_irrigation_advice(crop, region, weather_data):
             
             forecast_text.append(
                 f"Day {i+1}: Avg Temp: {temp_day:.1f}°C (Min: {temp_min:.1f}°C, Max: {temp_max:.1f}°C), "
-                f"Humidity: {humidity}%, "
-                f"Precipitation Chance: {precipitation:.1f}%, "
-                f"Wind Speed: {wind_speed:.1f} km/h, "
-                f"Weather: {weather_desc}"
+                f"Humidity: {humidity}%, Precipitation Chance: {precipitation:.1f}%, "
+                f"Wind Speed: {wind_speed:.1f} km/h, Weather: {weather_desc}"
             )
-        
-        # Prepare general weather observations
-        weather_observations = f"The weather forecast indicates high precipitation chances for the first 5 days, followed by a relatively drier period. Adjust these recommendations based on actual rainfall received."
-        
+
         prompt = f"""
-        You are an expert agricultural advisor specializing in irrigation for {crop} in {region}, {state}.
-        Analyze the provided weather data and generate comprehensive irrigation advice structured as a JSON object.
+        You are an expert agricultural advisor for irrigation planning for {crop} in {region}, {state}.
         
-        Current Weather: Temperature: {current_weather['main']['temp']}°C, Humidity: {current_weather['main']['humidity']}% , Description: {current_weather['weather'][0]['description']}
+        Current Weather: Temp {current_weather['main']['temp']}°C, Humidity {current_weather['main']['humidity']}%, "
+        f"Description {current_weather['weather'][0]['description']}.
         
-        7-Day Forecast:
+        7-Day Forecast Summary:
         {chr(10).join(forecast_text)}
         
-        Output the JSON with the following structure. Ensure all fields are present.
-        'general_considerations': string - A paragraph summarizing general weather observations related to irrigation.
-        'monitoring_guidelines': list of strings - Key guidelines for monitoring (e.g., "Field water level should be visually assessed daily").
-        'key_factors': list of strings - Important factors influencing irrigation (e.g., "Rice varieties have varying water requirements").
-        'daily_advice': array of 7 objects, each with:
-            'day': integer (1-7)
-            'status': string ("Irrigate", "No Irrigation", "Hold", "Monitor") - Main action status.
-            'status_detail': string (optional) - Further detail on status, e.g., "Late afternoon if needed".
-            'temp': number - Average temperature for the day.
-            'precipitation_chance': number - Probability of precipitation in percentage.
-            'description': string - Concise advice for the day (e.g., "No irrigation required. Precipitation chance is 100%...").
-            'time_window': string (optional) - Specific time for action, e.g., "4-5 PM".
-        'action_legend': array of objects, each with:
-            'status': string ("Irrigate", "Hold", "No Irrigation", "Monitor")
-            'description': string - Explanation for the status.
-        
-        Ensure the JSON is valid and can be directly parsed.
+        Return ONLY valid JSON matching this schema:
+        {{
+          "general_considerations": "string" (A paragraph summarizing general weather observations related to irrigation),
+          "monitoring_guidelines": ["string", "string"] (Clearly explained guidelines for monitoring irrigation),
+          "key_factors": ["string", "string"] (Clearly explained important factors influencing irrigation),
+          "daily_advice": [
+            {{
+              "day": 1,
+              "status": "Irrigate" | "No Irrigation" | "Hold" | "Monitor" (Depending upon the Current Weather and Precipitation Chance),
+              "status_detail": "string" (3-4 words)),
+              "temp": 0,
+              "precipitation_chance": 0,
+              "description": "string" (First letter should be capital of the description),
+              "time_window": "string" (Time window for irrigation)
+            }}
+          ],
+          "action_legend": [
+            {{"status": "Irrigate", "description": "Water needed"}},
+            {{"status": "Hold", "description": "Wait & assess"}},
+            {{"status": "No Irrigation", "description": "Rain sufficient"}},
+            {{"status": "Monitor", "description": "Check conditions"}}
+          ]
+        }}
         """
-        
-        response = model_agri.generate_content(prompt)
-        json_response_str = response.text.strip()
-        
-        # Clean and parse JSON response
-        if json_response_str.startswith("```json") and json_response_str.endswith("```"):
-            json_response_str = json_response_str[len("```json"):-len("```")].strip()
-        elif json_response_str.startswith("```") and json_response_str.endswith("```"):
-            json_response_str = json_response_str[len("```"):-len("```")].strip()
-        
-        return json.loads(json_response_str)
+
+        def call_and_parse(model_obj):
+            resp = model_obj.generate_content(prompt)
+            # Ensure we actually have content
+            if not getattr(resp, 'candidates', None) or not resp.candidates or not getattr(resp.candidates[0], 'content', None):
+                raise ValueError("Empty response from model")
+            # Some SDKs expose text; others require assembling parts. Prefer text when present
+            raw = (getattr(resp, 'text', None) or "").strip()
+            if not raw and hasattr(resp.candidates[0].content, 'parts'):
+                parts = resp.candidates[0].content.parts
+                raw = "".join(getattr(p, 'text', '') for p in parts).strip()
+            if not raw:
+                raise ValueError("Model returned no text content")
+            if raw.startswith("```json") and raw.endswith("```"):
+                raw = raw[len("```json"):-len("```")].strip()
+            elif raw.startswith("```") and raw.endswith("```"):
+                raw = raw[len("```"):-len("```")].strip()
+            return json.loads(raw)
+
+        try:
+            return call_and_parse(primary_model)
+        except Exception as e_primary:
+            print(f"[IRRIGATION] Primary model failed: {e_primary}")
+            try:
+                return call_and_parse(fallback_model)
+            except Exception as e_fallback:
+                print(f"[IRRIGATION] Fallback model failed: {e_fallback}")
+                raise
         
     except Exception as e:
         print(f"LLM Irrigation Error: {e}")
         # Fallback to a structured default if LLM fails to produce valid JSON
-        # This is a basic fallback, ideally it would be more detailed
         return {
             "general_considerations": "Unable to generate detailed irrigation advice due to an error. Please adjust recommendations based on actual rainfall received.",
             "monitoring_guidelines": ["Monitor soil moisture daily.", "Check for signs of stress in plants."],
@@ -2434,6 +2460,100 @@ def agri_voice_query():
     except Exception as e:
         logging.error(f"Error in agricultural voice query endpoint: {str(e)}")
         return jsonify({"error": f"Server error: {str(e)}"}), 500
+
+@app.route('/agri_weather', methods=['POST'])
+def agri_weather():
+    try:
+        data = request.get_json()
+        region = data.get('region', '')
+        crop = data.get('crop', '')
+        if not region:
+            return jsonify({'error': 'Region is required'}), 400
+
+        weather_data = get_enhanced_weather_data(region)
+        weather_graph = create_enhanced_weather_graph(weather_data)
+        state_info = INDIAN_STATES.get(region, {"state": "India", "state_code": "IN"})
+        forecast_data = []
+        forecast = weather_data.get('forecast', [])
+        for day in forecast[:7]:
+            try:
+                temp_data = day.get('temp', {})
+                forecast_data.append({
+                    'date': datetime.fromtimestamp(day.get('dt', datetime.now().timestamp())).strftime('%Y-%m-%d'),
+                    'temp': temp_data.get('day', 28),
+                    'temp_min': temp_data.get('min', 23),
+                    'temp_max': temp_data.get('max', 33),
+                    'humidity': day.get('humidity', 70),
+                    'precipitation_prob': day.get('pop', 0) * 100,
+                    'description': day.get('weather', [{}])[0].get('description', 'clear'),
+                    'wind_speed': day.get('wind_speed', 5.0)
+                })
+            except Exception:
+                continue
+
+        return jsonify({
+            'region': region,
+            'state': state_info['state'],
+            'current_season': get_current_season(),
+            'current_weather': {
+                'temperature': weather_data['current']['main']['temp'],
+                'humidity': weather_data['current']['main']['humidity'],
+                'description': weather_data['current']['weather'][0]['description'],
+                'wind_speed': weather_data['current'].get('wind', {}).get('speed', 0)
+            },
+            'forecast': forecast_data,
+            'weather_graph': weather_graph
+        })
+    except Exception as e:
+        logging.error(f"/agri_weather error: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/agri_irrigation', methods=['POST'])
+def agri_irrigation():
+    try:
+        data = request.get_json()
+        region = data.get('region', '')
+        crop = data.get('crop', '')
+        if not region or not crop:
+            return jsonify({'error': 'Region and crop are required'}), 400
+        weather_data = get_enhanced_weather_data(region)
+        irrigation_advice = generate_dynamic_irrigation_advice(crop, region, weather_data)
+        return jsonify({'irrigation_advice': irrigation_advice})
+    except Exception as e:
+        logging.error(f"/agri_irrigation error: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/agri_seeds', methods=['POST'])
+def agri_seeds():
+    try:
+        data = request.get_json()
+        region = data.get('region', '')
+        crop = data.get('crop', '')
+        if not region or not crop:
+            return jsonify({'error': 'Region and crop are required'}), 400
+        weather_data = get_enhanced_weather_data(region)
+        seed_varieties = generate_dynamic_seed_varieties(crop, region, weather_data)
+        return jsonify({'seed_varieties': seed_varieties})
+    except Exception as e:
+        logging.error(f"/agri_seeds error: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/agri_advice', methods=['POST'])
+def agri_advice():
+    try:
+        data = request.get_json()
+        region = data.get('region', '')
+        crop = data.get('crop', '')
+        if not region or not crop:
+            return jsonify({'error': 'Region and crop are required'}), 400
+        weather_data = get_enhanced_weather_data(region)
+        irrigation_advice = generate_dynamic_irrigation_advice(crop, region, weather_data)
+        seed_varieties = generate_dynamic_seed_varieties(crop, region, weather_data)
+        comprehensive_advice = generate_comprehensive_ai_advice(crop, region, weather_data, irrigation_advice, seed_varieties)
+        return jsonify({'comprehensive_advice': comprehensive_advice})
+    except Exception as e:
+        logging.error(f"/agri_advice error: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
 
 if __name__ == '__main__':
     app.run(debug=False, port=5000)
