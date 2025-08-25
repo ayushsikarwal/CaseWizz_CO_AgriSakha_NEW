@@ -1,8 +1,6 @@
 import { TreeDeciduous } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
-import Header from "./Header";
-import Sidebar from "./Sidebar";
-import Footer from "./Footer";
+import Layout from "./Layout";
 
 interface AudioRecordingState {
   isRecording: boolean;
@@ -245,14 +243,10 @@ const EyMain: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-[#fccd03]/30 flex flex-col">
-      <Header />
-
+    <Layout activePage="home">
       <div className="flex flex-1 justify-center items-center">
-        <Sidebar activePage="home" />
-
         {/* Main Content */}
-        <div className="flex-1 ml-64 pt-28 px-12 pb-12">
+        <div className="flex-1 pt-28 px-12 pb-12">
           <div className="max-w-6xl mx-auto grid grid-cols-2 gap-12">
             {/* Left Column - Steps */}
             <div className="bg-white/10 backdrop-blur-lg rounded-xl shadow-lg p-10 text-white transition-all duration-300 hover:shadow-2xl hover:shadow-[#fccd03]/20 hover:scale-[1.02] hover:-translate-y-1 active:scale-95">
@@ -366,11 +360,9 @@ const EyMain: React.FC = () => {
         </div>
       </div>
 
-      <Footer />
-
       {/* Hidden audio element */}
       <audio ref={responseAudioRef} />
-    </div>
+    </Layout>
   );
 };
 

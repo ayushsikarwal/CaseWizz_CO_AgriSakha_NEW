@@ -20,9 +20,7 @@ import Wheat3 from "../images/3M_Wheat.jpg";
 import Wheat6 from "../images/6M_Wheat.png";
 import NewGraphs from "./NewGraphs";
 import StackOld from "./extraComponents/StackOld";
-import Header from "./Header";
-import Sidebar from "./Sidebar";
-import Footer from "./Footer";
+import Layout from "./Layout";
 
 
 interface NewsData {
@@ -581,13 +579,10 @@ const RuralFinancialNews: React.FC = () => {
     }
   };
 
-  return (
-    <div className="flex min-h-screen">
-      <Sidebar activePage="rural-financial-news" />
-
+    return (
+    <Layout activePage="rural-financial-news">
       {/* Main Content */}
-      <div className="flex-1 flex flex-col ml-64">
-        <Header />
+      <div className="flex-1 flex flex-col">
 
         {/* Main Content Area */}
         <main className="flex-1 bg-gradient-to-b from-black to-gray-900 pt-20">
@@ -766,7 +761,6 @@ const RuralFinancialNews: React.FC = () => {
           </div>
         </main>
 
-        <Footer />
 
         {/* Chat Bot Button */}
         <button
@@ -926,7 +920,7 @@ const RuralFinancialNews: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </Layout>
   );
 };
 

@@ -15,20 +15,15 @@ import {
 } from 'lucide-react';
 import { useNavigate, Routes, Route } from 'react-router-dom';
 import AgriGenie from './components/AgriGenie';
+import { useAuth } from './contexts/AuthContext';
+import SignInModal from './components/SignInModal';
+import SignUpModal from './components/SignUpModal';
 
 function NavBar() {
-  // const [dialog, setDialog] = useState(false)
+  const [showSignIn, setShowSignIn] = useState(false);
   const [showSignUp, setShowSignUp] = useState(false);
-  const [user, setUser] = useState<{ name: string } | null>(null);
+  const { user, isAuthenticated, signOut } = useAuth();
   const navigate = useNavigate();
-  
-  useEffect(() => {
-    // Check if user data exists in localStorage
-    const userData = localStorage.getItem('userData');
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-  }, []);
   
   const scrollToSection = (sectionId: string) => {
     const section = document.getElementById(sectionId);
@@ -38,8 +33,7 @@ function NavBar() {
   };
 
   const handleSignOut = () => {
-    localStorage.removeItem('userData');
-    setUser(null);
+    signOut();
   };
 
   return (
@@ -68,9 +62,9 @@ function NavBar() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              {user ? (
+              {isAuthenticated ? (
                 <div className="flex items-center space-x-4">
-                  <span className="text-[#fccd03] font-medium">Welcome, {user.name.split(' ')[0]}</span>
+                  <span className="text-[#fccd03] font-medium">Welcome, {user?.name.split(' ')[0]}</span>
                   <button 
                     onClick={handleSignOut}
                     className="bg-[#fccd03] text-black px-4 py-2 rounded-lg font-medium hover:bg-[#e3b902] transition-colors"
@@ -80,7 +74,12 @@ function NavBar() {
                 </div>
               ) : (
                 <>
-                  <button className="text-white hover:text-[#fccd03] transition-colors px-4 py-2">Sign In</button>
+                  <button 
+                    onClick={() => setShowSignIn(true)}
+                    className="text-white hover:text-[#fccd03] transition-colors px-4 py-2"
+                  >
+                    Sign In
+                  </button>
                   <button 
                     onClick={() => setShowSignUp(true)} 
                     className="bg-[#fccd03] text-black px-4 py-2 rounded-lg font-medium hover:bg-[#e3b902] transition-colors"
@@ -94,114 +93,28 @@ function NavBar() {
         </div>
       </nav>
       
-      {showSignUp && <SignUpModal onClose={() => setShowSignUp(false)} onSignUp={setUser} />}
+      {/* Sign In Modal */}
+      {showSignIn && (
+        <SignInModal
+          onClose={() => setShowSignIn(false)}
+          onSwitchToSignUp={() => {
+            setShowSignIn(false);
+            setShowSignUp(true);
+          }}
+        />
+      )}
+
+      {/* Sign Up Modal */}
+      {showSignUp && (
+        <SignUpModal
+          onClose={() => setShowSignUp(false)}
+          onSwitchToSignIn={() => {
+            setShowSignUp(false);
+            setShowSignIn(true);
+          }}
+        />
+      )}
     </>
-  );
-}
-
-function SignUpModal({ onClose, onSignUp }: { onClose: () => void, onSignUp: (user: { name: string, place: string, mobile: string }) => void }) {
-  const [name, setName] = useState('');
-  const [place, setPlace] = useState('');
-  const [mobile, setMobile] = useState('');
-  const [error, setError] = useState('');
-  const navigate = useNavigate();
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Basic validation
-    if (!name || !place || !mobile) {
-      setError('All fields are required');
-      return;
-    }
-    
-    if (!/^\d{10}$/.test(mobile)) {
-      setError('Please enter a valid 10-digit mobile number');
-      return;
-    }
-    
-    // Create user data object
-    const userData = { name, place, mobile };
-    
-    // Save to localStorage
-    localStorage.setItem('userData', JSON.stringify(userData));
-    
-    // Update parent component
-    onSignUp(userData);
-    
-    // Close modal and navigate to home
-    onClose();
-    navigate('/');
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl p-8 w-full max-w-md relative animate-fade-in">
-        <button 
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-        >
-          <X className="w-6 h-6" />
-        </button>
-        
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Create Your Account</h2>
-        
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
-            {error}
-          </div>
-        )}
-        
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label htmlFor="name" className="block text-gray-700 mb-2">Full Name</label>
-            <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#fccd03]"
-              placeholder="Enter your full name"
-            />
-          </div>
-          
-          <div className="mb-4">
-            <label htmlFor="place" className="block text-gray-700 mb-2">Place</label>
-            <input
-              type="text"
-              id="place"
-              value={place}
-              onChange={(e) => setPlace(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#fccd03]"
-              placeholder="Enter your city/town"
-            />
-          </div>
-          
-          <div className="mb-6">
-            <label htmlFor="mobile" className="block text-gray-700 mb-2">Mobile Number</label>
-            <input
-              type="tel"
-              id="mobile"
-              value={mobile}
-              onChange={(e) => setMobile(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#fccd03]"
-              placeholder="Enter your 10-digit mobile number"
-            />
-          </div>
-          
-          <button
-            type="submit"
-            className="w-full bg-[#fccd03] text-black py-3 rounded-lg font-semibold hover:bg-[#e3b902] transition-colors"
-          >
-            Sign Up
-          </button>
-        </form>
-        
-        <p className="text-center text-gray-600 mt-6">
-          Already have an account? <a href="#" className="text-[#fccd03] font-medium">Sign In</a>
-        </p>
-      </div>
-    </div>
   );
 }
 

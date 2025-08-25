@@ -1,8 +1,6 @@
 import { TreeDeciduous } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
-import Header from "./Header";
-import Sidebar from "./Sidebar";
-import Footer from "./Footer";
+import Layout from "./Layout";
 
 interface SearchResult {
   results: string[];
@@ -169,14 +167,10 @@ const ExpenseEarningsTracker: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-black via-gray-900 to-[#fccd03]/30">
-      <Header />
-
+    <Layout activePage="budget-assistant">
       <div className="flex flex-1 py-20">
-        <Sidebar activePage="budget-assistant" />
-
         {/* Content Area */}
-        <div className="ml-64 flex-1 p-8 flex gap-8">
+        <div className="flex-1 p-8 flex gap-8">
           {/* Main Content */}
           <div className="flex-[2] flex flex-col items-center overflow-y-auto space-y-12">
             <div className="w-full bg-gradient-to-br from-gray-900/80 via-gray-800/80 to-gray-900/80 p-10 rounded-3xl shadow-2xl backdrop-blur-lg border-2 border-[#fccd03]/40 hover:border-[#fccd03]/60 transition-all duration-300">
@@ -419,7 +413,6 @@ const ExpenseEarningsTracker: React.FC = () => {
         </div>
       </div>
 
-      <Footer />
       {/* Chat Bot Button */}
       <button
         onClick={() => setIsChatOpen(!isChatOpen)}
@@ -600,7 +593,7 @@ const ExpenseEarningsTracker: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </Layout>
   );
 };
 

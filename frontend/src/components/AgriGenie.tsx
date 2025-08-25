@@ -24,9 +24,7 @@ import {
   Trophy // For best in region
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import Header from "./Header";
-import Sidebar from "./Sidebar";
-import Footer from "./Footer";
+import Layout from "./Layout";
 
 interface WeatherData {
   temperature: number;
@@ -556,8 +554,7 @@ const AgriGenie: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-black via-gray-900 to-[#fccd03]/30">
-      <Header />
+    <Layout activePage="agri-assistant">
       {/* Crop Selection Dropdown */}
       <div className="fixed top-0 right-0 z-50 mt-6 mr-6">
         <select
@@ -574,10 +571,8 @@ const AgriGenie: React.FC = () => {
       </div>
 
       <div className="flex flex-1 py-20">
-        <Sidebar activePage="agri-assistant" />
-
         {/* Main Content */}
-        <div className="ml-64 flex-1 p-8">
+        <div className="flex-1 p-8">
           <div className="max-w-7xl mx-auto">
             {errorMessage && (
               <div className="bg-red-500 text-white p-4 rounded-lg mb-8 text-center">
@@ -1149,7 +1144,7 @@ const AgriGenie: React.FC = () => {
 
       {/* Hidden audio element */}
       <audio ref={responseAudioRef} />
-    </div>
+    </Layout>
   );
 };
 

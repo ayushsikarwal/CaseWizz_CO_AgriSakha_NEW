@@ -1,9 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import OCR from './OCR';
 import { TreeDeciduous } from 'lucide-react';
-import Header from "./Header";
-import Sidebar from "./Sidebar";
-import Footer from "./Footer";
+import Layout from "./Layout";
 
 interface ExtractedData {
   first_name: string;
@@ -561,14 +559,10 @@ const LoanQueryAssistant: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-black">
-      <Header />
-
+    <Layout activePage="loan-assistant">
       <div className="flex flex-1 py-20">
-        <Sidebar activePage="loan-assistant" />
-
         {/* Main Content Area */}
-        <div className="ml-64 flex-1 p-8 flex">
+        <div className="flex-1 p-8 flex">
           {/* Left Side - Main Content */}
           <div className="w-1/2 pr-4 space-y-8">
             {/* Bank Selection */}
@@ -757,9 +751,7 @@ const LoanQueryAssistant: React.FC = () => {
           </div>
         </div>
       </div>
-
-      <Footer />
-    </div>
+    </Layout>
   );
 };
 
