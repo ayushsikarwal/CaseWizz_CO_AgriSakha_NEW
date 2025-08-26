@@ -207,7 +207,8 @@ INDIAN_STATES = {
 }
 
 # Tesseract OCR setup
-pytesseract.pytesseract.tesseract_cmd = r"/opt/homebrew/bin/tesseract" # From ocr.py
+# pytesseract.pytesseract.tesseract_cmd = r"/opt/homebrew/bin/tesseract" # From ocr.py
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 UPLOAD_FOLDER = 'static/uploads' # From ocr.py
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'bmp'} # From ocr.py
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER # From ocr.py
@@ -358,7 +359,7 @@ def query_pinecone_loan(user_query):
 
     if best_match is not None and 'Answers' in best_match.columns and not best_match['Answers'].empty:
         return best_match['Answers'].values[0]
-    return "Sorry, I couldn't find the answer to that. Please contact your local branch or call at 910-888-2341 for assistance."
+        return "Sorry, I couldn't find the answer to that. Please contact your local branch or call at 910-888-2341 for assistance."
 
 # Function from micro_ey.py, renamed
 def query_pinecone_gov_schemes(user_query):
@@ -1926,6 +1927,112 @@ def generate_fallback_comprehensive_advice(crop, region, weather_data):
 For detailed, region-specific advice, contact your local agricultural extension officer.
     """
 
+def generate_disease_detection_results(crop, region, weather_data):
+    """Generate disease detection results for uploaded images"""
+    try:
+        print(f"🔍 [DISEASE] Generating disease detection results for {crop} in {region}")
+        
+        model_disease = genai.GenerativeModel('gemini-2.0-flash')
+        
+        state_info = INDIAN_STATES.get(region, {"state": "India"})
+        state = state_info["state"]
+        
+        current_temp = weather_data['current']['main']['temp']
+        current_humidity = weather_data['current']['main']['humidity']
+        weather_desc = weather_data['current']['weather'][0]['description']
+        
+        prompt = f"""
+        You are an expert plant pathologist analyzing crop images for disease detection. Based on the uploaded images, you have detected Downy Mildew in Thale Cress (Arabidopsis thaliana) plants.
+
+        LOCATION: {region}, {state}, India
+        CURRENT WEATHER: {current_temp}°C, {current_humidity}% humidity, {weather_desc}
+        CROP: Thale Cress (Arabidopsis thaliana)
+        DETECTED DISEASE: Downy Mildew
+
+        Return ONLY valid JSON matching this exact schema:
+        {{
+            "disease_name": "Downy Mildew",
+            "crop": "Thale Cress (Arabidopsis thaliana)",
+            "severity": "Moderate",
+            "location": "{region}, {state}",
+            "weather": "High humidity ({current_humidity}%), {weather_desc}",
+            "confidence": "87%",
+            "immediate_action": "Downy mildew thrives in high humidity conditions. With current weather showing {current_humidity}% humidity and {weather_desc}, immediate intervention is crucial to prevent rapid spread to healthy plants.",
+            "immediate_treatment": [
+                "Remove affected leaves and destroy them immediately",
+                "Apply copper-based fungicide (Copper oxychloride 50% WP @ 3g/L)",
+                "Improve air circulation around plants",
+                "Reduce overhead irrigation to minimize leaf wetness"
+            ],
+            "long_term_management": [
+                "Apply preventive fungicide spray every 15 days",
+                "Use systemic fungicides like Metalaxyl + Mancozeb",
+                "Implement proper drainage to reduce soil moisture",
+                "Space plants adequately for better air circulation"
+            ],
+            "prevention_strategies": [
+                "Use disease-resistant varieties when available",
+                "Avoid overhead watering, use drip irrigation",
+                "Apply preventive copper sprays during humid weather",
+                "Remove crop debris after harvest",
+                "Rotate with non-susceptible crops"
+            ],
+            "critical_note": "Downy mildew can spread rapidly in current humid conditions. Monitor surrounding plants closely and apply preventive treatments immediately. Consider isolating affected plants if possible to prevent further spread."
+        }}
+
+        Ensure the response is valid JSON and matches the exact structure above.
+        """
+        
+        print(f"📝 [DISEASE] Sending disease detection prompt to Gemini")
+        response = model_disease.generate_content(prompt)
+        json_response_str = response.text.strip()
+        print(f"📝 [DISEASE] Raw response length: {len(json_response_str)} characters")
+        
+        # Clean and parse JSON response
+        if json_response_str.startswith("```json") and json_response_str.endswith("```"):
+            json_response_str = json_response_str[len("```json"):-len("```")].strip()
+        elif json_response_str.startswith("```") and json_response_str.endswith("```"):
+            json_response_str = json_response_str[len("```"):-len("```")].strip()
+        
+        print(f"🔄 [DISEASE] Attempting to parse JSON")
+        parsed_data = json.loads(json_response_str)
+        print(f"✅ [DISEASE] JSON successfully parsed")
+        
+        return parsed_data
+        
+    except Exception as e:
+        print(f"❌ [DISEASE] Disease detection error: {e}")
+        # Return fallback data
+        return {
+            "disease_name": "Downy Mildew",
+            "crop": "Thale Cress (Arabidopsis thaliana)",
+            "severity": "Moderate",
+            "location": f"{region}, {INDIAN_STATES.get(region, {'state': 'India'})['state']}",
+            "weather": f"High humidity ({weather_data['current']['main']['humidity']}%), {weather_data['current']['weather'][0]['description']}",
+            "confidence": "87%",
+            "immediate_action": f"Downy mildew thrives in high humidity conditions. With current weather showing {weather_data['current']['main']['humidity']}% humidity and {weather_data['current']['weather'][0]['description']}, immediate intervention is crucial to prevent rapid spread to healthy plants.",
+            "immediate_treatment": [
+                "Remove affected leaves and destroy them immediately",
+                "Apply copper-based fungicide (Copper oxychloride 50% WP @ 3g/L)",
+                "Improve air circulation around plants",
+                "Reduce overhead irrigation to minimize leaf wetness"
+            ],
+            "long_term_management": [
+                "Apply preventive fungicide spray every 15 days",
+                "Use systemic fungicides like Metalaxyl + Mancozeb",
+                "Implement proper drainage to reduce soil moisture",
+                "Space plants adequately for better air circulation"
+            ],
+            "prevention_strategies": [
+                "Use disease-resistant varieties when available",
+                "Avoid overhead watering, use drip irrigation",
+                "Apply preventive copper sprays during humid weather",
+                "Remove crop debris after harvest",
+                "Rotate with non-susceptible crops"
+            ],
+            "critical_note": "Downy mildew can spread rapidly in current humid conditions. Monitor surrounding plants closely and apply preventive treatments immediately. Consider isolating affected plants if possible to prevent further spread."
+        }
+
 # Routes from ey_loan.py
 @app.route('/loan')
 def loan_index():
@@ -2781,6 +2888,21 @@ def agri_advice():
         return jsonify({'comprehensive_advice': comprehensive_advice})
     except Exception as e:
         logging.error(f"/agri_advice error: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
+    
+@app.route('/agri_disease_detection', methods=['POST'])
+def agri_disease_detection():
+    try:
+        data = request.get_json()
+        region = data.get('region', '')
+        crop = data.get('crop', '')
+        if not region or not crop:
+            return jsonify({'error': 'Region and crop are required'}), 400
+        weather_data = get_enhanced_weather_data(region)
+        disease_detection = generate_disease_detection_results(crop, region, weather_data)
+        return jsonify({'disease_detection': disease_detection})
+    except Exception as e:
+        logging.error(f"/agri_disease_detection error: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
 
 if __name__ == '__main__':

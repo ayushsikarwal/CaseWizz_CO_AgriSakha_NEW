@@ -227,7 +227,7 @@ const ImageUpload = ({ onBothUploadedChange, setCrop }: ImageUploadProps) => {
                     description: "Your images are being processed. Results will be available shortly.",
                   });
                   onBothUploadedChange?.(true);
-                  setCrop?.("Thales cress");
+                  setCrop?.("Thale Cress");
                   setIsOpen(false);
                 }}
                 onMouseEnter={() => setStartHovered(true)}

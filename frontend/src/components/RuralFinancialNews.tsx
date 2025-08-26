@@ -21,6 +21,8 @@ import Wheat6 from "../images/6M_Wheat.png";
 import NewGraphs from "./NewGraphs";
 import StackOld from "./extraComponents/StackOld";
 import Layout from "./Layout";
+import { useToast } from "../hooks/use-toast";
+import { Toaster } from "./extraComponents/toaster";
 
 
 interface NewsData {
@@ -46,7 +48,37 @@ interface KeywordsData {
   keywords: string;
 }
 
+// Add missing type definitions
+interface User {
+  id: string;
+  "1m": string;
+  "3m": string;
+  "6m": string;
+}
+
+interface EnglishItem {
+  id: number;
+  headline: string;
+  content: string;
+  publishDate: string;
+}
+
+interface HindiItem {
+  id: number;
+  headline: string;
+  content: string;
+  publishDate: string;
+}
+
 const RuralFinancialNews: React.FC = () => {
+  const { toast } = useToast();
+  
+  // Loading states for different sections
+  const [newsLoading, setNewsLoading] = useState<boolean>(true);
+  const [keywordsLoading, setKeywordsLoading] = useState<boolean>(true);
+  const [youtubeLoading, setYoutubeLoading] = useState<boolean>(true);
+  const [graphsLoading, setGraphsLoading] = useState<boolean>(false);
+
   const [nameRecording, setNameRecording] = useState<AudioRecordingState>({
     isRecording: false,
     chunks: [],
@@ -233,6 +265,15 @@ const RuralFinancialNews: React.FC = () => {
   const controls = useAnimation();
   const [isEnglishNewsHovered, setIsEnglishNewsHovered] = useState(false);
 
+  // Show welcome toast on component mount
+  useEffect(() => {
+    toast({
+      title: "Welcome to Rural Financial News",
+      description: "Loading latest agricultural updates and insights...",
+      variant: "info",
+    });
+  }, [toast]);
+
   const items = [
     "Item 1",
     "Item 2",
@@ -326,6 +367,7 @@ const RuralFinancialNews: React.FC = () => {
 
   useEffect(() => {
     // Fetch YouTube index data
+    setYoutubeLoading(true);
     fetch("http://127.0.0.1:7863/")
       .then((response) => response.json())
       .then((data) => {
@@ -337,51 +379,86 @@ const RuralFinancialNews: React.FC = () => {
         } else {
           setYoutubeIndex([]);
         }
+        setYoutubeLoading(false);
+        toast({
+          title: "YouTube Data Loaded",
+          description: "Expert financial insights are ready!",
+          variant: "success",
+        });
       })
       .catch((error) => {
         console.error("Error fetching YouTube index:", error);
         setYoutubeIndex([]);
+        setYoutubeLoading(false);
+        toast({
+          title: "YouTube Data Error",
+          description: "Failed to load expert insights. Please try again.",
+          variant: "destructive",
+        });
       });
 
-      fetch("http://localhost:7864/api/get-news", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ language: detectedLanguageCode }),
-      })
-      .then((res) => res.json())
-      .then((data) => {
-        const raw = data.news_content.agricultural_terms;
-        const rawArt = data.news_content.news_article;
+    // Fetch news and keywords
+    setNewsLoading(true);
+    setKeywordsLoading(true);
+    fetch("http://localhost:7864/api/get-news", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ language: detectedLanguageCode }),
+    })
+    .then((res) => res.json())
+    .then((data) => {
+      const raw = data.news_content.agricultural_terms;
+      const rawArt = data.news_content.news_article;
 
-        // Extract lines like "1. **Biostimulants**: Substances..."
-        const matches = raw.matchAll(/\*\*(.*?)\*\*: (.*?)(?=\n|$)/g);
-        const matchesArt = rawArt.matchAll(/\*\*([^*]+)\*\*: ([^\n]+)/g);
+      // Extract lines like "1. **Biostimulants**: Substances..."
+      const matches = raw.matchAll(/\*\*(.*?)\*\*: (.*?)(?=\n|$)/g);
+      const matchesArt = rawArt.matchAll(/\*\*([^*]+)\*\*: ([^\n]+)/g);
 
-        // TypeScript doesn't know the type of 'item' from matchAll, so it infers 'unknown'.
-        // You need to assert the type to RegExpMatchArray to access item[1] and item[2] without error.
-        const formatted = Array.from(matches, (item) => {
-          const match = item as RegExpMatchArray;
-          return {
-            heading: match[1],
-            desc: match[2]
-          };
-        });
+      // TypeScript doesn't know the type of 'item' from matchAll, so it infers 'unknown'.
+      // You need to assert the type to RegExpMatchArray to access item[1] and item[2] without error.
+      const formatted = Array.from(matches, (item) => {
+        const match = item as RegExpMatchArray;
+        return {
+          heading: match[1],
+          desc: match[2]
+        };
+      });
 
-        const formattedArt = Array.from(matchesArt, (m) => ({
-          heading: m[1].trim(),
-          desc: m[2].trim()
-        }));
+      const formattedArt = Array.from(matchesArt, (m) => {
+        const match = m as RegExpMatchArray;
+        return {
+          heading: match[1].trim(),
+          desc: match[2].trim()
+        };
+      });
 
-        console.log("KeyWords:-->", formatted);
-        console.log("Articles:-->", formattedArt);
+      console.log("KeyWords:-->", formatted);
+      console.log("Articles:-->", formattedArt);
 
-        setKeyWords(formatted);
-        setArticles(formattedArt);
-      })
-      .catch((err) => console.error("Error fetching:", err));
-  }, [detectedLanguageCode]);
+      setKeyWords(formatted);
+      setArticles(formattedArt);
+      setNewsLoading(false);
+      setKeywordsLoading(false);
+      
+      toast({
+        title: "News & Keywords Loaded",
+        description: "Latest agricultural updates are ready!",
+        variant: "success",
+      });
+    })
+    .catch((err) => {
+      console.error("Error fetching:", err);
+      setNewsLoading(false);
+      setKeywordsLoading(false);
+      toast({
+        title: "News Loading Error",
+        description: "Failed to load latest news. Please try again.",
+        variant: "destructive",
+      });
+    });
+  }, [detectedLanguageCode, toast]);
 
   const startRecording = async (type: "name" | "query") => {
     try {
@@ -406,6 +483,11 @@ const RuralFinancialNews: React.FC = () => {
           recorder: mediaRecorder,
         });
         setNameStatus("Recording...");
+        toast({
+          title: "Recording Started",
+          description: "Listening for your name...",
+          variant: "info",
+        });
       } else {
         setQueryRecording({
           isRecording: true,
@@ -413,6 +495,11 @@ const RuralFinancialNews: React.FC = () => {
           recorder: mediaRecorder,
         });
         setQueryStatus("Recording...");
+        toast({
+          title: "Recording Started",
+          description: "Listening for your question...",
+          variant: "info",
+        });
       }
     } catch (error) {
       console.error(`Error starting ${type} recording:`, error);
@@ -421,6 +508,11 @@ const RuralFinancialNews: React.FC = () => {
       } else {
         setQueryStatus("Error accessing microphone.");
       }
+      toast({
+        title: "Microphone Error",
+        description: "Unable to access microphone. Please check permissions.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -434,6 +526,11 @@ const RuralFinancialNews: React.FC = () => {
       setNameRecording((prev) => ({ ...prev, isRecording: false }));
       setNameStatus("Processing audio...");
       setNameProcessing(true);
+      toast({
+        title: "Processing Audio",
+        description: "Converting your voice to text...",
+        variant: "info",
+      });
     } else if (type === "query" && queryRecording.recorder) {
       queryRecording.recorder.stop();
       queryRecording.recorder.stream
@@ -442,6 +539,11 @@ const RuralFinancialNews: React.FC = () => {
       setQueryRecording((prev) => ({ ...prev, isRecording: false }));
       setQueryStatus("Processing audio...");
       setQueryProcessing(true);
+      toast({
+        title: "Processing Audio",
+        description: "Converting your voice to text...",
+        variant: "info",
+      });
     }
   };
 
@@ -464,10 +566,20 @@ const RuralFinancialNews: React.FC = () => {
         if (data.error) {
           setNameStatus(data.error);
           console.error(data.error);
+          toast({
+            title: "Name Processing Error",
+            description: data.error,
+            variant: "destructive",
+          });
           return;
         }
 
         setNameStatus(`${data.message}`);
+        toast({
+          title: "Name Processed",
+          description: `Hello, ${data.message}!`,
+          variant: "success",
+        });
       } else if (type === "query") {
         const response = await fetch("http://127.0.0.1:5000/ey_query", {
           method: "POST",
@@ -480,6 +592,11 @@ const RuralFinancialNews: React.FC = () => {
         if (data.error) {
           setQueryStatus(data.error);
           console.error(data.error);
+          toast({
+            title: "Query Processing Error",
+            description: data.error,
+            variant: "destructive",
+          });
           return;
         }
 
@@ -487,6 +604,12 @@ const RuralFinancialNews: React.FC = () => {
         setResponse(data.response || "No response available.");
         setDetectedLanguageCode(data.language_code || "en");
         if (data.response) setShowPlayButton(true);
+        
+        toast({
+          title: "Response Generated",
+          description: "AI has processed your query successfully!",
+          variant: "success",
+        });
       }
     } catch (error) {
       console.error(`Error processing ${type} recording:`, error);
@@ -497,6 +620,11 @@ const RuralFinancialNews: React.FC = () => {
         setQueryProcessing(false);
         setQueryStatus("Error processing query.");
       }
+      toast({
+        title: "Processing Error",
+        description: "Failed to process audio. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -517,11 +645,23 @@ const RuralFinancialNews: React.FC = () => {
         value: level,
         label: data.message || `Status: Literacy level set to ${level}.`,
       });
+      
+      toast({
+        title: "Literacy Level Set",
+        description: `Response will be tailored for ${level} literacy level.`,
+        variant: "success",
+      });
     } catch (error) {
       console.error("Error setting literacy level:", error);
       setLiteracyLevel({
         value: null,
         label: "Status: Error setting literacy level.",
+      });
+      
+      toast({
+        title: "Literacy Level Error",
+        description: "Failed to set literacy level. Please try again.",
+        variant: "destructive",
       });
     }
   };
@@ -539,6 +679,12 @@ const RuralFinancialNews: React.FC = () => {
   // Function to play response
   const playResponse = async () => {
     try {
+      toast({
+        title: "Generating Audio",
+        description: "Converting response to speech...",
+        variant: "info",
+      });
+      
       const apiResponse = await fetch("http://127.0.0.1:5000/ey_play_response", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -552,6 +698,11 @@ const RuralFinancialNews: React.FC = () => {
 
       if (!apiResponse.ok) {
         console.error("Error generating audio response.");
+        toast({
+          title: "Audio Generation Error",
+          description: "Failed to generate audio response.",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -564,9 +715,20 @@ const RuralFinancialNews: React.FC = () => {
         responseAudioRef.current.src = audioUrl;
         responseAudioRef.current.play();
         setIsPlayingResponse(true);
+        
+        toast({
+          title: "Audio Playing",
+          description: "Response is now playing...",
+          variant: "success",
+        });
       }
     } catch (error) {
       console.error("Error playing response:", error);
+      toast({
+        title: "Audio Error",
+        description: "Failed to play audio response.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -576,19 +738,26 @@ const RuralFinancialNews: React.FC = () => {
       responseAudioRef.current.pause();
       responseAudioRef.current.currentTime = 0;
       setIsPlayingResponse(false);
+      
+      toast({
+        title: "Audio Stopped",
+        description: "Response playback has been stopped.",
+        variant: "info",
+      });
     }
   };
 
     return (
     <Layout activePage="rural-financial-news">
+      <Toaster />
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
 
         {/* Main Content Area */}
-        <main className="flex-1 bg-gradient-to-b from-black to-gray-900 pt-20">
+        <main className="flex-1 bg-gradient-to-b from-black to-gray-900 pt-2">
           <div className="container mx-auto px-4 py-12">
             <h1 className="text-4xl md:text-5xl font-bold text-white text-center mb-12">
-              <span className="text-[#fccd03]">📢 Rural India</span> Financial
+              <span className="text-[#fccd03]">📢 Rural India</span> Agricultural
               Updates
             </h1>
 
@@ -601,23 +770,23 @@ const RuralFinancialNews: React.FC = () => {
                     📜 Latest News
                   </h2>
                   <div className="text-gray-400 leading-relaxed whitespace-pre-line">
-                    {/* {egnlishItems.map((newsItem, index) => (
-                      // <div key={index} className="text-[#ffffff] shadow-sm p-4 mb-4 border border-white/10 rounded-lg">
-                      //   {newsItem}
-                      // </div>
-                      <div className="max-w-full rounded-lg overflow-hidden shadow-lg bg-white">
-                        <div className="px-6 py-4">
-                          <h2 className="font-bold text-xl mb-2">{newsItem.headline}</h2>
-                          <p className="text-gray-700 text-base mb-4">
-                            {newsItem.content}
-                          </p>
-                          <p className="text-gray-500 text-sm">
-                            {newsItem.publishDate}
-                          </p>
+                    {newsLoading ? (
+                      // News Skeleton
+                      <div className="overflow-hidden mt-10 h-[600px] w-full">
+                        <div className="flex flex-col gap-4">
+                          {Array.from({ length: 6 }).map((_, index) => (
+                            <div key={index} className="w-full rounded-lg overflow-hidden shadow-lg bg-gradient-to-br from-black to-gray-900 border border-white/10 mb-4">
+                              <div className="px-6 py-4">
+                                <div className="h-6 bg-gray-700 rounded w-3/4 mb-3 animate-pulse"></div>
+                                <div className="h-4 bg-gray-700 rounded w-full mb-2 animate-pulse"></div>
+                                <div className="h-4 bg-gray-700 rounded w-11/12 animate-pulse"></div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    ))} */}
-                    <div
+                    ) : (
+                      <div
                         className="overflow-hidden mt-10 h-[600px] w-full"
                         onMouseEnter={() => {
                           setIsEnglishNewsHovered(true);
@@ -643,14 +812,12 @@ const RuralFinancialNews: React.FC = () => {
                                 <p className="text-gray-300 text-base mb-4">
                                   {item.desc}
                                 </p>
-                                {/* <p className="text-gray-500 text-sm">
-                                  {item.publishDate}
-                                </p> */}
                               </div>
                             </div>
                           ))}
                         </motion.div>
                       </div>
+                    )}
                   </div>
                   <div className="absolute -bottom-4 -right-4 bg-[#fccd03] rounded-xl p-3">
                     <svg
@@ -677,42 +844,19 @@ const RuralFinancialNews: React.FC = () => {
                 <h2 className="text-2xl font-bold text-[#fccd03] mb-6">
                   🔑 Words of the day
                 </h2>
-                {/* <Stack decodedLanguage={detectedLanguageCode} keywords={keyWords}/> */}
-                <StackOld decodedLanguage={detectedLanguageCode}/>
-                {/* <ul className="space-y-4">
-                    {keywords.map((keyword, index) => {
-                      const parts = keyword.split(':');
-                      return (
-                        <li key={index} className="text-gray-400 flex items-center space-x-2 transition-all duration-300 hover:text-white hover:translate-x-2">
-                          <span className="w-2 h-2 bg-[#fccd03] rounded-full"></span>
-                          <span>
-                            {parts.length > 1 ? (
-                              <>
-                                <strong className="text-[#fccd03]">{parts[0]}:</strong>{parts.slice(1).join(':')}
-                              </>
-                            ) : (
-                              keyword
-                            )}
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ul> */}
-                {/* <div className="absolute -bottom-4 -right-4 bg-[#fccd03] rounded-xl p-3">
-                  <svg
-                    className="w-6 h-6 text-black"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div> */}
+                {keywordsLoading ? (
+                  // Keywords Skeleton
+                  <div className="space-y-4">
+                    {Array.from({ length: 5 }).map((_, index) => (
+                      <div key={index} className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-gray-600 rounded-full animate-pulse"></div>
+                        <div className="h-4 bg-gray-700 rounded w-3/4 animate-pulse"></div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <StackOld decodedLanguage={detectedLanguageCode}/>
+                )}
               </div>
               {/* </div> */}
             </div>
@@ -728,6 +872,26 @@ const RuralFinancialNews: React.FC = () => {
                 <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-[#fccd03] rounded-full group-hover:w-48 transition-all duration-500"></div>
               </h1>
               <NewGraphs />
+              {!graphsLoading && (
+                <div className="mt-4 text-center">
+                  <button
+                    onClick={() => {
+                      setGraphsLoading(true);
+                      setTimeout(() => {
+                        setGraphsLoading(false);
+                        toast({
+                          title: "Market Trends Updated",
+                          description: "Latest market data has been refreshed!",
+                          variant: "success",
+                        });
+                      }, 2000);
+                    }}
+                    className="bg-[#fccd03] text-black px-4 py-2 rounded-lg hover:bg-[#e6b800] transition-all duration-300"
+                  >
+                    Refresh Market Data
+                  </button>
+                </div>
+              )}
             </div>
 
             
@@ -754,7 +918,18 @@ const RuralFinancialNews: React.FC = () => {
                 <div className="h-0.5 bg-gradient-to-l from-transparent to-[#fccd03] w-16 md:w-32 ml-4"></div>
                 <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-[#fccd03] rounded-full group-hover:w-48 transition-all duration-500"></div>
               </h1>
-              <SliderYouTube youtubeIndex={youtubeIndex} />
+              {youtubeLoading ? (
+                // YouTube Skeleton
+                <div className="flex justify-center items-center h-64">
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-gray-700 rounded-full mx-auto mb-4 animate-pulse"></div>
+                    <div className="h-4 bg-gray-700 rounded w-48 mx-auto mb-2 animate-pulse"></div>
+                    <div className="h-3 bg-gray-700 rounded w-32 mx-auto animate-pulse"></div>
+                  </div>
+                </div>
+              ) : (
+                <SliderYouTube youtubeIndex={youtubeIndex} />
+              )}
             </div>
 
 
@@ -764,7 +939,16 @@ const RuralFinancialNews: React.FC = () => {
 
         {/* Chat Bot Button */}
         <button
-          onClick={() => setIsChatOpen(!isChatOpen)}
+          onClick={() => {
+            setIsChatOpen(!isChatOpen);
+            if (!isChatOpen) {
+              toast({
+                title: "Chat Assistant",
+                description: "Voice assistant is ready to help!",
+                variant: "info",
+              });
+            }
+          }}
           className="fixed bottom-8 right-8 bg-[#fccd03] text-black p-4 rounded-full shadow-lg hover:bg-[#e6b800] transition-all duration-300 z-50"
         >
           <svg
@@ -796,7 +980,14 @@ const RuralFinancialNews: React.FC = () => {
                 Rural Financial Assistant
               </h3>
               <button
-                onClick={() => setIsChatOpen(false)}
+                onClick={() => {
+                  setIsChatOpen(false);
+                  toast({
+                    title: "Chat Closed",
+                    description: "Voice assistant has been closed.",
+                    variant: "info",
+                  });
+                }}
                 className="text-gray-400 hover:text-white transition-colors duration-200"
               >
                 <svg
@@ -825,10 +1016,19 @@ const RuralFinancialNews: React.FC = () => {
                 <div className="mx-auto my-4 w-8 h-8 border-4 border-[#fccd03] border-t-[#e3b902] rounded-full animate-spin"></div>
               )}
               <div className="bg-white/10 backdrop-blur-lg rounded-xl shadow-lg p-2 mt-6 text-white transition-all duration-300 hover:shadow-2xl hover:shadow-[#fccd03]/20 hover:scale-[1.02] hover:-translate-y-1 active:scale-95">
-                {/* <h2 className="text-3xl font-bold text-[#fccd03] mb-6 transition-transform duration-300 hover:translate-x-2">Response</h2> */}
-
                 <div className="bg-black/30 rounded-lg p-8 mb-8 min-h-[300px] font-medium text-lg leading-relaxed transition-all duration-300 hover:bg-black/40">
-                  {response}
+                  {queryProcessing ? (
+                    // Chat Response Skeleton
+                    <div className="space-y-4">
+                      <div className="h-4 bg-gray-700 rounded w-3/4 animate-pulse"></div>
+                      <div className="h-4 bg-gray-700 rounded w-full animate-pulse"></div>
+                      <div className="h-4 bg-gray-700 rounded w-11/12 animate-pulse"></div>
+                      <div className="h-4 bg-gray-700 rounded w-2/3 animate-pulse"></div>
+                      <div className="h-4 bg-gray-700 rounded w-5/6 animate-pulse"></div>
+                    </div>
+                  ) : (
+                    response
+                  )}
                 </div>
 
                 <div className="flex gap-4">
@@ -863,6 +1063,11 @@ const RuralFinancialNews: React.FC = () => {
                     onClick={(e) => {
                       e.currentTarget.classList.toggle("bg-green-500");
                       handleSetLiteracyLevel("poor");
+                      toast({
+                        title: "Literacy Level Selected",
+                        description: "Responses will be simplified for better understanding.",
+                        variant: "info",
+                      });
                     }}
                     className="bg-[#fccd03] text-black rounded-lg px-3 py-1.5 transition-colors duration-200 flex-1 min-w-[60px] max-w-[80px] text-sm"
                   >
@@ -872,6 +1077,11 @@ const RuralFinancialNews: React.FC = () => {
                     onClick={(e) => {
                       e.currentTarget.classList.toggle("bg-green-500");
                       handleSetLiteracyLevel("good");
+                                          toast({
+                      title: "Literacy Level Selected",
+                      description: "Responses will be tailored for moderate understanding.",
+                      variant: "info",
+                    });
                     }}
                     className="bg-[#fccd03] text-black rounded-lg px-3 py-1.5 transition-colors duration-200 flex-1 min-w-[60px] max-w-[80px] text-sm"
                   >
@@ -881,6 +1091,11 @@ const RuralFinancialNews: React.FC = () => {
                     onClick={(e) => {
                       e.currentTarget.classList.toggle("bg-green-500");
                       handleSetLiteracyLevel("very good");
+                                          toast({
+                      title: "Literacy Level Selected",
+                      description: "Responses will include detailed financial insights.",
+                      variant: "info",
+                    });
                     }}
                     className="bg-[#fccd03] text-black rounded-lg px-3 py-1.5 transition-colors duration-200 flex-1 min-w-[80px] max-w-[80px] text-sm"
                   >

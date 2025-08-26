@@ -1,7 +1,7 @@
-import { TreeDeciduous, TrendingDown, TrendingUp, DollarSign, Clock, BarChart3, PieChart, Search, Mic } from "lucide-react";
+import { TrendingDown, TrendingUp, DollarSign, Clock, BarChart3, PieChart, Mic } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
 import Layout from "./Layout";
-import { PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface SearchResult {
   results: string[];
@@ -284,29 +284,29 @@ const ExpenseEarningsTracker: React.FC = () => {
           {/* Header */}
           <div className="mb-8 flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-white mb-2">Financial Dashboard</h1>
-              <p className="text-gray-400">Track your agricultural expenses and earnings</p>
+              <h1 className="text-3xl font-bold text-yellow-400 mb-2">Financial Dashboard</h1>
+              <p className="text-gray-300">Track your agricultural expenses and earnings</p>
             </div>
-            <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 p-3 rounded-xl shadow-lg border border-gray-700/50">
+            <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 p-3 rounded-xl shadow-lg border border-gray-600/50">
               <div className="flex items-center space-x-3">
-                <button
+                  <button
                   className={`group flex items-center justify-center w-16 h-16 ${
-                    isRecording
-                      ? "bg-red-600 hover:bg-red-700"
-                      : "bg-blue-600 hover:bg-blue-700"
+                      isRecording
+                      ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
+                      : "bg-gradient-to-r from-yellow-400 to-yellow-400 hover:from-yellow-600 hover:to-orange-600"
                   } text-white rounded-full cursor-pointer transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg`}
-                  onClick={() => toggleRecording("input")}
-                >
-                  <Mic className="w-8 h-8" />
-                </button>
+                    onClick={() => toggleRecording("input")}
+                  >
+                  <Mic className="text-black w-8 h-8" />
+                  </button>
                 <div className="flex-1">
                   <p className="text-gray-300 text-sm">
                     {message || "Record your query"}
                   </p>
                   {queryProcessing && (
                     <div className="flex items-center space-x-2 mt-1">
-                      <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                      <p className="text-blue-400 text-xs">Processing...</p>
+                      <div className="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
+                      <p className="text-yellow-400 text-xs">Processing...</p>
                     </div>
                   )}
                 </div>
@@ -320,10 +320,10 @@ const ExpenseEarningsTracker: React.FC = () => {
             {/* Top Row - Summary Cards */}
             
             {/* Total Expenditure Card */}
-            <div className="bg-gradient-to-br from-red-800/80 to-red-900/80 p-6 rounded-xl shadow-lg border border-red-700/50">
+            <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 p-6 rounded-xl shadow-lg border border-gray-600/50">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-white/80 text-sm font-medium uppercase tracking-wide">TOTAL EXPENDITURE</h3>
-                <div className="w-8 h-8 bg-red-600/20 rounded-full flex items-center justify-center">
+                <h3 className="text-red-400 text-sm font-medium uppercase tracking-wide">TOTAL EXPENDITURE</h3>
+                <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center">
                   <TrendingDown className="w-4 h-4 text-red-400" />
                 </div>
               </div>
@@ -334,10 +334,10 @@ const ExpenseEarningsTracker: React.FC = () => {
                 </div>
 
             {/* Total Earnings Card */}
-            <div className="bg-gradient-to-br from-green-800/80 to-green-900/80 p-6 rounded-xl shadow-lg border border-green-700/50">
+            <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 p-6 rounded-xl shadow-lg border border-gray-600/50">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-white/80 text-sm font-medium uppercase tracking-wide">TOTAL EARNINGS</h3>
-                <div className="w-8 h-8 bg-green-600/20 rounded-full flex items-center justify-center">
+                <h3 className="text-green-400 text-sm font-medium uppercase tracking-wide">TOTAL EARNINGS</h3>
+                <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
                   <TrendingUp className="w-4 h-4 text-green-400" />
                 </div>
               </div>
@@ -348,16 +348,10 @@ const ExpenseEarningsTracker: React.FC = () => {
                   </div>
 
             {/* Net Profit/Loss Card */}
-            <div className={`p-6 rounded-xl shadow-lg border ${
-              netProfit >= 0 
-                ? 'bg-gradient-to-br from-green-800/80 to-green-900/80 border-green-700/50' 
-                : 'bg-gradient-to-br from-red-800/80 to-red-900/80 border-red-700/50'
-            }`}>
+            <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 p-6 rounded-xl shadow-lg border border-gray-600/50">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-white/80 text-sm font-medium uppercase tracking-wide">NET PROFIT/LOSS</h3>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  netProfit >= 0 ? 'bg-green-600/20' : 'bg-red-600/20'
-                }`}>
+                <h3 className={`text-sm font-medium uppercase tracking-wide ${netProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>NET PROFIT/LOSS</h3>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${netProfit >= 0 ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
                   <DollarSign className={`w-4 h-4 ${netProfit >= 0 ? 'text-green-400' : 'text-red-400'}`} />
                 </div>
               </div>
@@ -381,10 +375,10 @@ const ExpenseEarningsTracker: React.FC = () => {
             {/* Middle Row - Expenditure Details */}
             
             {/* Expenditure Breakdown */}
-            <div className="bg-gradient-to-br from-red-800/80 to-red-900/80 p-6 rounded-xl shadow-lg border border-red-700/50">
+            <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 p-6 rounded-xl shadow-lg border border-gray-600/50">
               <div className="flex items-center mb-4">
-                <Clock className="w-5 h-5 text-red-400 mr-2" />
-                <h3 className="text-white font-semibold">Expenditure Breakdown</h3>
+                <Clock className="w-5 h-5 text-yellow-400 mr-2" />
+                <h3 className="text-yellow-400 font-semibold">Expenditure Breakdown</h3>
               </div>
               {expenseChartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={250}>
@@ -406,10 +400,10 @@ const ExpenseEarningsTracker: React.FC = () => {
                   </RechartsPieChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="w-full h-48 bg-red-800/30 rounded-lg flex items-center justify-center">
+                <div className="w-full h-48 bg-gray-700/30 rounded-lg flex items-center justify-center">
                   <div className="text-center">
-                    <PieChart className="w-12 h-12 text-red-400 mx-auto mb-2" />
-                    <p className="text-red-300 text-sm">No data available</p>
+                    <PieChart className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-300 text-sm">No data available</p>
                   </div>
                 </div>
               )}
@@ -420,17 +414,17 @@ const ExpenseEarningsTracker: React.FC = () => {
                       className="w-3 h-3 rounded mr-2" 
                       style={{ backgroundColor: expenseColors[index % expenseColors.length] }}
                     ></div>
-                    <span className="text-white/80">{item.name}</span>
+                    <span className="text-gray-300">{item.name}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Category Wise Spending */}
-            <div className="bg-gradient-to-br from-red-800/80 to-red-900/80 p-6 rounded-xl shadow-lg border border-red-700/50">
+            <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 p-6 rounded-xl shadow-lg border border-gray-600/50">
               <div className="flex items-center mb-8">
-                <BarChart3 className="w-5 h-5 text-red-400 mr-2" />
-                <h3 className="text-white font-semibold">Category Wise Spending</h3>
+                <BarChart3 className="w-5 h-5 text-yellow-400 mr-2" />
+                <h3 className="text-yellow-400 font-semibold">Category Wise Spending</h3>
               </div>
               {expenseBarData.length > 0 ? (
                 <ResponsiveContainer width="90%" height={300}>
@@ -443,42 +437,42 @@ const ExpenseEarningsTracker: React.FC = () => {
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="w-full h-48 bg-red-800/30 rounded-lg flex items-center justify-center">
+                <div className="w-full h-48 bg-gray-700/30 rounded-lg flex items-center justify-center">
                   <div className="text-center">
-                    <BarChart3 className="w-12 h-12 text-red-400 mx-auto mb-2" />
-                    <p className="text-red-300 text-sm">No data available</p>
+                    <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-300 text-sm">No data available</p>
                   </div>
                 </div>
               )}
             </div>
 
             {/* Expense History */}
-            <div className="bg-gradient-to-br from-red-800/80 to-red-900/80 p-6 rounded-xl shadow-lg border border-red-700/50">
+            <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 p-6 rounded-xl shadow-lg border border-gray-600/50">
               <div className="flex items-center mb-4">
-                <Clock className="w-5 h-5 text-red-400 mr-2" />
-                <h3 className="text-white font-semibold">Expense History</h3>
+                <Clock className="w-5 h-5 text-yellow-400 mr-2" />
+                <h3 className="text-yellow-400 font-semibold">Expense History</h3>
           </div>
               <div className="relative mb-4">
                 <input
                   type="text"
                   placeholder="Search conversations..."
-                  className="w-full bg-red-800/30 border border-red-600/50 rounded-lg px-4 py-2 text-white placeholder-red-300 text-sm"
+                  className="w-full bg-gray-700/30 border border-gray-600/50 rounded-lg px-4 py-2 text-white placeholder-gray-400 text-sm"
                 />
                 <button
                   onClick={() => toggleRecording("expense")}
-                  className="absolute right-3 top-2.5 text-red-400 hover:text-red-300 transition-colors"
+                  className="absolute right-3 top-2.5 text-yellow-400 hover:text-yellow-300 transition-colors"
                 >
                   <Mic className="w-4 h-4" />
                 </button>
               </div>
               <div className="space-y-3 max-h-[16rem] overflow-y-auto">
                 {[...expenseHistory, ...expenseSearchResults].map((entry, index) => (
-                  <div key={index} className="bg-red-800/30 p-3 rounded-lg border border-red-600/30">
+                  <div key={index} className="bg-gray-700/30 p-3 rounded-lg border border-gray-600/30">
                     <p className="text-white text-sm mb-1">{entry.description}</p>
                     <div className="flex items-center justify-between">
-                      <span className="text-red-400 font-bold text-lg">{formatCurrency(entry.amount)}</span>
-                      <div className="flex items-center text-xs text-red-300">
-                        <span className="bg-red-600/50 px-2 py-1 rounded mr-2">{entry.category}</span>
+                      <span className="text-yellow-400 font-bold text-lg">{formatCurrency(entry.amount)}</span>
+                      <div className="flex items-center text-xs text-gray-300">
+                        <span className="bg-yellow-500/20 px-2 py-1 rounded mr-2">{entry.category}</span>
                         <span>{formatTimeAgo(entry.timestamp)}</span>
                       </div>
                     </div>
@@ -486,7 +480,7 @@ const ExpenseEarningsTracker: React.FC = () => {
                 ))}
                 {expenseHistory.length === 0 && expenseSearchResults.length === 0 && (
                   <div className="text-center py-8">
-                    <p className="text-red-300 text-sm">No expense history available</p>
+                    <p className="text-gray-300 text-sm">No expense history available</p>
                   </div>
                 )}
               </div>
@@ -495,10 +489,10 @@ const ExpenseEarningsTracker: React.FC = () => {
             {/* Bottom Row - Earnings Details */}
             
             {/* Earnings Breakdown */}
-            <div className="bg-gradient-to-br from-green-800/80 to-green-900/80 p-6 rounded-xl shadow-lg border border-green-700/50">
+            <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 p-6 rounded-xl shadow-lg border border-gray-600/50">
               <div className="flex items-center mb-4">
-                <Clock className="w-5 h-5 text-green-400 mr-2" />
-                <h3 className="text-white font-semibold">Earnings Breakdown</h3>
+                <Clock className="w-5 h-5 text-yellow-400 mr-2" />
+                <h3 className="text-yellow-400 font-semibold">Earnings Breakdown</h3>
               </div>
               {earningChartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={250}>
@@ -520,10 +514,10 @@ const ExpenseEarningsTracker: React.FC = () => {
                   </RechartsPieChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="w-full h-48 bg-green-800/30 rounded-lg flex items-center justify-center">
+                <div className="w-full h-48 bg-gray-700/30 rounded-lg flex items-center justify-center">
                   <div className="text-center">
-                    <PieChart className="w-12 h-12 text-green-400 mx-auto mb-2" />
-                    <p className="text-green-300 text-sm">No data available</p>
+                    <PieChart className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-300 text-sm">No data available</p>
                   </div>
                 </div>
               )}
@@ -534,17 +528,17 @@ const ExpenseEarningsTracker: React.FC = () => {
                       className="w-3 h-3 rounded mr-2" 
                       style={{ backgroundColor: earningColors[index % earningColors.length] }}
                     ></div>
-                    <span className="text-white/80">{item.name}</span>
+                    <span className="text-gray-300">{item.name}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Category Wise Earnings */}
-            <div className="bg-gradient-to-br from-green-800/80 to-green-900/80 p-6 rounded-xl shadow-lg border border-green-700/50">
+            <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 p-6 rounded-xl shadow-lg border border-gray-600/50">
               <div className="flex items-center mb-8">
-                <BarChart3 className="w-5 h-5 text-green-400 mr-2" />
-                <h3 className="text-white font-semibold">Category Wise Earnings</h3>
+                <BarChart3 className="w-5 h-5 text-yellow-400 mr-2" />
+                <h3 className="text-yellow-400 font-semibold">Category Wise Earnings</h3>
               </div>
               {earningBarData.length > 0 ? (
                 <ResponsiveContainer width="90%" height={300}>
@@ -557,42 +551,42 @@ const ExpenseEarningsTracker: React.FC = () => {
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="w-full h-48 bg-green-800/30 rounded-lg flex items-center justify-center">
+                <div className="w-full h-48 bg-gray-700/30 rounded-lg flex items-center justify-center">
                   <div className="text-center">
-                    <BarChart3 className="w-12 h-12 text-green-400 mx-auto mb-2" />
-                    <p className="text-green-300 text-sm">No data available</p>
+                    <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-300 text-sm">No data available</p>
                   </div>
                 </div>
               )}
             </div>
 
             {/* Earnings History */}
-            <div className="bg-gradient-to-br from-green-800/80 to-green-900/80 p-6 rounded-xl shadow-lg border border-green-700/50">
+            <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 p-6 rounded-xl shadow-lg border border-gray-600/50">
               <div className="flex items-center mb-4">
-                <Clock className="w-5 h-5 text-green-400 mr-2" />
-                <h3 className="text-white font-semibold">Earnings History</h3>
+                <Clock className="w-5 h-5 text-yellow-400 mr-2" />
+                <h3 className="text-yellow-400 font-semibold">Earnings History</h3>
               </div>
               <div className="relative mb-4">
                 <input
                   type="text"
                   placeholder="Search conversations..."
-                  className="w-full bg-green-800/30 border border-green-600/50 rounded-lg px-4 py-2 text-white placeholder-green-300 text-sm"
+                  className="w-full bg-gray-700/30 border border-gray-600/50 rounded-lg px-4 py-2 text-white placeholder-gray-400 text-sm"
                 />
                 <button
                   onClick={() => toggleRecording("earning")}
-                  className="absolute right-3 top-2.5 text-green-400 hover:text-green-300 transition-colors"
+                  className="absolute right-3 top-2.5 text-yellow-400 hover:text-yellow-300 transition-colors"
                 >
                   <Mic className="w-4 h-4" />
                 </button>
               </div>
               <div className="space-y-3 max-h-[16rem] overflow-y-auto">
                 {[...earningHistory, ...earningSearchResults].map((entry, index) => (
-                  <div key={index} className="bg-green-800/30 p-3 rounded-lg border border-green-600/30">
+                  <div key={index} className="bg-gray-700/30 p-3 rounded-lg border border-gray-600/30">
                     <p className="text-white text-sm mb-1">{entry.description}</p>
                     <div className="flex items-center justify-between">
-                      <span className="text-green-400 font-bold text-lg">{formatCurrency(entry.amount)}</span>
-                      <div className="flex items-center text-xs text-green-300">
-                        <span className="bg-green-600/50 px-2 py-1 rounded mr-2">{entry.category}</span>
+                      <span className="text-yellow-400 font-bold text-lg">{formatCurrency(entry.amount)}</span>
+                      <div className="flex items-center text-xs text-gray-300">
+                        <span className="bg-yellow-500/20 px-2 py-1 rounded mr-2">{entry.category}</span>
                         <span>{formatTimeAgo(entry.timestamp)}</span>
                       </div>
                     </div>
@@ -600,7 +594,7 @@ const ExpenseEarningsTracker: React.FC = () => {
                 ))}
                 {earningHistory.length === 0 && earningSearchResults.length === 0 && (
                   <div className="text-center py-8">
-                    <p className="text-green-300 text-sm">No earnings history available</p>
+                    <p className="text-gray-300 text-sm">No earnings history available</p>
                   </div>
                 )}
               </div>
@@ -614,7 +608,7 @@ const ExpenseEarningsTracker: React.FC = () => {
       {/* Chat Bot Button */}
       <button
         onClick={() => setIsChatOpen(!isChatOpen)}
-        className="fixed bottom-8 right-8 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all duration-300 z-50"
+        className="fixed bottom-8 right-8 bg-yellow-400 text-black p-4 rounded-full shadow-lg hover:bg-yellow-300 transition-all duration-300 z-50"
       >
         <svg
           className="w-6 h-6"
@@ -633,7 +627,7 @@ const ExpenseEarningsTracker: React.FC = () => {
 
       {/* Chat Bot Modal */}
       <div
-        className={`fixed bottom-24 right-8 w-[600px] h-[700px] bg-gray-900 rounded-lg shadow-2xl border border-gray-700 z-50 transition-all duration-300 ease-in-out transform ${
+        className={`fixed bottom-24 right-8 w-[600px] h-[700px] bg-black rounded-lg shadow-2xl border border-gray-700 z-50 transition-all duration-300 ease-in-out transform ${
           isChatOpen
             ? "opacity-100 translate-y-0"
             : "opacity-0 translate-y-8 pointer-events-none"
@@ -643,11 +637,11 @@ const ExpenseEarningsTracker: React.FC = () => {
           {/* Chat Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-700">
             <h3 className="text-white font-bold">
-              Is there anything I can help you with managing your budgets?
+              Rural Financial Assistant
             </h3>
             <button
               onClick={() => setIsChatOpen(false)}
-              className="text-gray-400 hover:text-white transition-colors duration-200"
+              className="text-white hover:text-gray-300 transition-colors duration-200"
             >
               <svg
                 className="w-5 h-5"
@@ -667,22 +661,22 @@ const ExpenseEarningsTracker: React.FC = () => {
 
           {/* Chat Messages Area */}
           <div className="flex-1 overflow-y-auto p-4">
-            <p className="bg-blue-600 text-white mt-4 px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:translate-x-2">
+            <p className="bg-yellow-400 text-black mt-4 px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:translate-x-2">
               {budgetQuery}
             </p>
             {queryProcessing && (
-              <div className="mx-auto my-4 w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <div className="mx-auto my-4 w-8 h-8 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
             )}
-            <div className="bg-gray-800 rounded-xl shadow-lg p-4 mt-6 text-white transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/20 hover:scale-[1.02] hover:-translate-y-1 active:scale-95">
+            <div className="bg-gray-800 rounded-xl shadow-lg p-4 mt-6 text-white transition-all duration-300 hover:shadow-2xl hover:shadow-yellow-400/20 hover:scale-[1.02] hover:-translate-y-1 active:scale-95">
               <div className="bg-gray-700 rounded-lg p-6 mb-4 min-h-[200px] font-medium text-lg leading-relaxed transition-all duration-300 hover:bg-gray-600">
                 {budgetAdvice && budgetAdvice.startsWith("AI Advice:") ? (
                   <div className="space-y-4">
-                    <h3 className="text-xl font-bold text-blue-400">AI Advice:</h3>
+                    <h3 className="text-xl font-bold text-yellow-400">AI Advice:</h3>
                     <div className="whitespace-pre-line">
                       {budgetAdvice.replace("AI Advice:", "").replace(/\*\*/g, "").split("\n").map((line, budget_index) => {
                         // Handle Financial Analysis and Recommendations headers
                         if (line.trim().endsWith(":")) {
-                          return <h4 key={budget_index} className="font-bold text-blue-400 text-xl mt-4 mb-2">{line.trim()}</h4>;
+                          return <h4 key={budget_index} className="font-bold text-yellow-400 text-xl mt-4 mb-2">{line.trim()}</h4>;
                         }
                         // Handle bullet points
                         else if (line.trim().startsWith("*")) {
@@ -690,7 +684,7 @@ const ExpenseEarningsTracker: React.FC = () => {
                           if (parts.length > 1) {
                             return (
                               <div key={budget_index} className="flex ml-4 mb-2">
-                                <span className="text-blue-400 mr-2">•</span>
+                                <span className="text-yellow-400 mr-2">•</span>
                                 <span className="font-semibold mr-2">{parts[0]}:</span>
                                 <span>{parts[1]}</span>
                               </div>
@@ -698,7 +692,7 @@ const ExpenseEarningsTracker: React.FC = () => {
                           } else {
                             return (
                               <div key={budget_index} className="flex ml-4 mb-2">
-                                <span className="text-blue-400 mr-2">•</span>
+                                <span className="text-yellow-400 mr-2">•</span>
                                 <span>{parts[0]}</span>
                               </div>
                             );
@@ -710,7 +704,7 @@ const ExpenseEarningsTracker: React.FC = () => {
                           if (parts.length > 1) {
                             return (
                               <div key={budget_index} className="flex ml-4 mb-2">
-                                <span className="text-blue-400 mr-2">{parts[0].trim()}:</span>
+                                <span className="text-yellow-400 mr-2">{parts[0].trim()}:</span>
                                 <span>{parts[1].trim()}</span>
                               </div>
                             );
@@ -740,7 +734,7 @@ const ExpenseEarningsTracker: React.FC = () => {
           <div className="p-4 border-t border-gray-700 mt-auto">
             <div className="flex justify-center">
               <button
-                className="group flex items-center justify-center w-16 h-16 bg-blue-600 text-white rounded-full cursor-pointer text-2xl font-bold transition-all duration-300 hover:bg-blue-700 hover:scale-110 active:scale-95 shadow-lg"
+                className="group flex items-center justify-center w-16 h-16 bg-yellow-400 text-black rounded-full cursor-pointer text-2xl font-bold transition-all duration-300 hover:bg-yellow-300 hover:scale-110 active:scale-95 shadow-lg"
                 onClick={() => toggleRecording("budget")}
               >
                 <Mic className="w-6 h-6" />

@@ -106,6 +106,19 @@ interface AgriGenieResult {
     }[];
   };
   analysis_timestamp: string;
+  disease_detection?: {
+    confidence: string;
+    disease_name: string;
+    crop: string;
+    severity: string;
+    location: string;
+    weather: string;
+    immediate_action: string;
+    immediate_treatment: string[];
+    long_term_management: string[];
+    prevention_strategies: string[];
+    critical_note: string;
+  };
 }
 
 interface AudioRecordingState {
@@ -134,6 +147,7 @@ const AgriGenie: React.FC = () => {
   const [irrigationLoading, setIrrigationLoading] = useState<boolean>(false);
   const [seedsLoading, setSeedsLoading] = useState<boolean>(false);
   const [adviceLoading, setAdviceLoading] = useState<boolean>(false);
+  const [DiseaseDetectionLoading, setDiseaseDetectionLoading] = useState<boolean>(false);
 
   const [nameRecording, setNameRecording] = useState<AudioRecordingState>({ isRecording: false, chunks: [], recorder: null });
   const [nameStatus, setNameStatus] = useState<string>('Status: Waiting for input...');
@@ -160,7 +174,7 @@ const AgriGenie: React.FC = () => {
   const inflightKeyRef = useRef<string | null>(null);
 
   const indianStates = ["Delhi", "Mumbai", "Bangalore", "Chennai", "Kolkata", "Hyderabad", "Pune", "Ahmedabad", "Jaipur", "Lucknow", "Chandigarh", "Bhopal", "Patna", "Raipur", "Indore", "Surat", "Kochi", "Thiruvananthapuram", "Guwahati", "Bhubaneswar"];
-  const crops = ["rice", "wheat", "maize", "sugarcane", "cotton"];
+  const crops = ["rice", "wheat", "maize", "sugarcane", "cotton", "Thale Cress"];
 
   const getCityFromCoordinates = async (lat: number, lon: number): Promise<string> => {
     try {
@@ -214,7 +228,7 @@ const AgriGenie: React.FC = () => {
     setAdviceLoading(true);
   
     try {
-      const effectiveCrop = bothImagesUploaded ? 'Thales cress' : selectedCrop;
+      const effectiveCrop = bothImagesUploaded ? 'Thale cress' : selectedCrop;
       const key = `${selectedRegion}|${effectiveCrop}`;
       if (inflightKeyRef.current === key) return;
       inflightKeyRef.current = key;
@@ -262,6 +276,27 @@ const AgriGenie: React.FC = () => {
         setResults((prev: any) => ({ ...prev, ...seedsData }));
       } catch (e) { console.error("Failed to load seed data:", e); } 
       finally { if (reqId === requestIdRef.current) setSeedsLoading(false); }
+      
+      if (bothImagesUploaded) {
+        try {
+          const diseaseDetectionResp = await fetch('http://localhost:5000/agri_disease_detection', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bothImagesUploaded ? { ...baseBody, stage: '3' } : baseBody)
+          });
+      
+          const diseaseDetectionData = await diseaseDetectionResp.json();
+          if (!diseaseDetectionResp.ok) throw new Error(diseaseDetectionData.error || 'Disease detection fetch failed');
+          if (reqId && reqId !== requestIdRef.current) return;
+          setResults((prev: any) => ({ ...prev, ...diseaseDetectionData }));
+      
+        } catch (e) {
+          console.error("Failed to load disease detection data:", e);
+        } finally {
+          if (reqId === requestIdRef.current) setDiseaseDetectionLoading(false);
+        }
+      }
+      
   
       try {
         const adviceResp = await fetch('http://localhost:5000/agri_advice', {
@@ -280,6 +315,7 @@ const AgriGenie: React.FC = () => {
       showError(errorMessage);
       console.error('Error in fetchResults:', error);
       setWeatherLoading(false);
+      setDiseaseDetectionLoading(false);
       setIrrigationLoading(false);
       setSeedsLoading(false);
       setAdviceLoading(false);
@@ -699,7 +735,7 @@ const AgriGenie: React.FC = () => {
                       </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar" style={{ maxHeight: '1800px' }}>
+                    <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar" style={{ maxHeight: '2800px' }}>
                       {activeAdviceTab === 'irrigation' && (
                         irrigationLoading ? (
                           <div className="space-y-6">
@@ -814,6 +850,124 @@ const AgriGenie: React.FC = () => {
                           </div>
                         ) : results?.comprehensive_advice && (
                           <div className="space-y-8 bg-transparent p-6 rounded-lg">
+                            {/* Disease Detection Section - Only show when both images are uploaded */}
+                            {results?.disease_detection && (
+                              <div className="space-y-4">
+                                <h3 className="text-2xl font-bold text-gray-200 mb-4 flex items-center">
+                                  <span className="text-red-500 mr-2">🔬</span>AI Disease Detection Results
+                                </h3>
+                                <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+                                  <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                      <h4 className="text-lg font-bold text-gray-800 mb-2">Based on your uploaded images analysis</h4>
+                                    </div>
+                                    <div className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                                      {results.disease_detection.confidence} Confidence
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                                    {/* Disease Overview */}
+                                    <div className="bg-gray-50 rounded-lg p-4">
+                                      <h5 className="font-semibold text-gray-800 mb-3 flex items-center">
+                                        <span className="text-red-500 mr-2">⚠️</span>Disease Overview
+                                      </h5>
+                                      <div className="space-y-2 text-sm">
+                                        <div className="flex items-center">
+                                          <span className="text-gray-600 w-20">Disease:</span>
+                                          <span className="font-medium text-gray-800">{results.disease_detection.disease_name}</span>
+                                        </div>
+                                        <div className="flex items-center">
+                                          <span className="text-gray-600 w-20">Crop:</span>
+                                          <span className="font-medium text-gray-800">{results.disease_detection.crop}</span>
+                                        </div>
+                                        <div className="flex items-center">
+                                          <span className="text-gray-600 w-20">Severity:</span>
+                                          <span className="font-medium text-gray-800">{results.disease_detection.severity}</span>
+                                        </div>
+                                        <div className="flex items-center">
+                                          <span className="text-gray-600 w-20">Location:</span>
+                                          <span className="font-medium text-gray-800">{results.disease_detection.location}</span>
+                                        </div>
+                                        <div className="flex items-center">
+                                          <span className="text-gray-600 w-20">Weather:</span>
+                                          <span className="font-medium text-gray-800">{results.disease_detection.weather}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Immediate Action Required */}
+                                    <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+                                      <h5 className="font-semibold text-red-800 mb-3 flex items-center">
+                                        <span className="text-red-500 mr-2">📅</span>Immediate Action Required
+                                      </h5>
+                                      <p className="text-sm text-red-700 leading-relaxed">
+                                        {results.disease_detection.immediate_action}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Treatment and Management Sections */}
+                                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                    {/* Immediate Treatment */}
+                                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                                      <h5 className="font-semibold text-blue-800 mb-3 flex items-center">
+                                        <span className="text-blue-500 mr-2">⚡</span>Immediate Treatment
+                                      </h5>
+                                      <ul className="text-sm text-blue-700 space-y-1">
+                                        {results.disease_detection.immediate_treatment.map((treatment: string, index: number) => (
+                                          <li key={index} className="flex items-start">
+                                            <span className="text-blue-500 mr-2">•</span>
+                                            {treatment}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                    
+                                    {/* Long-term Management */}
+                                    <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                                      <h5 className="font-semibold text-green-800 mb-3 flex items-center">
+                                        <span className="text-green-500 mr-2">📋</span>Long-term Management
+                                      </h5>
+                                      <ul className="text-sm text-green-700 space-y-1">
+                                        {results.disease_detection.long_term_management.map((management: string, index: number) => (
+                                          <li key={index} className="flex items-start">
+                                            <span className="text-green-500 mr-2">•</span>
+                                            {management}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                    
+                                    {/* Prevention Strategies */}
+                                    <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                                      <h5 className="font-semibold text-purple-800 mb-3 flex items-center">
+                                        <span className="text-purple-500 mr-2">🛡️</span>Prevention Strategies
+                                      </h5>
+                                      <ul className="text-sm text-purple-700 space-y-1">
+                                        {results.disease_detection.prevention_strategies.map((strategy: string, index: number) => (
+                                          <li key={index} className="flex items-start">
+                                            <span className="text-purple-500 mr-2">•</span>
+                                            {strategy}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Critical Note */}
+                                  <div className="mt-6 bg-red-100 rounded-lg p-4 border border-red-300">
+                                    <h5 className="font-semibold text-red-800 mb-2 flex items-center">
+                                      <span className="text-red-500 mr-2">⚠️</span>Critical Note:
+                                    </h5>
+                                    <p className="text-sm text-red-700 leading-relaxed">
+                                      {results.disease_detection.critical_note}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
                             <div className="space-y-4">
                               <h3 className="text-2xl font-bold text-gray-200 mb-4 flex items-center"><span className="text-blue-500 mr-2">🛡️</span>Pest & Disease Management</h3>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
