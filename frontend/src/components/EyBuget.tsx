@@ -1,6 +1,7 @@
-import { TreeDeciduous } from "lucide-react";
+import { TreeDeciduous, TrendingDown, TrendingUp, DollarSign, Clock, BarChart3, PieChart, Search, Mic } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
 import Layout from "./Layout";
+import { PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface SearchResult {
   results: string[];
@@ -21,6 +22,33 @@ interface TrackerData {
   total_earnings: number;
   chat_history_expenses: string[];
   chat_history_earnings: string[];
+  expense_chart_data: ChartDataPoint[];
+  earning_chart_data: ChartDataPoint[];
+  transaction_history_expenses: TransactionHistory[];
+  transaction_history_earnings: TransactionHistory[];
+}
+
+interface ChartDataPoint {
+  name: string;
+  value: number;
+  category: string;
+  sub_category: string;
+}
+
+interface TransactionHistory {
+  description: string;
+  amount: number;
+  category: string;
+  timestamp: string;
+  type: 'expense' | 'earning';
+}
+
+interface TransactionHistory {
+  description: string;
+  amount: number;
+  category: string;
+  timestamp: string;
+  type: 'expense' | 'earning';
 }
 
 const ExpenseEarningsTracker: React.FC = () => {
@@ -38,14 +66,10 @@ const ExpenseEarningsTracker: React.FC = () => {
   const [totalEarnings, setTotalEarnings] = useState<number>(0);
 
   // State for chat history
-  const [expenseHistory, setExpenseHistory] = useState<string[]>([]);
-  const [earningHistory, setEarningHistory] = useState<string[]>([]);
-  const [expenseSearchResults, setExpenseSearchResults] = useState<string[]>(
-    []
-  );
-  const [earningSearchResults, setEarningSearchResults] = useState<string[]>(
-    []
-  );
+  const [expenseHistory, setExpenseHistory] = useState<TransactionHistory[]>([]);
+  const [earningHistory, setEarningHistory] = useState<TransactionHistory[]>([]);
+  const [expenseSearchResults, setExpenseSearchResults] = useState<TransactionHistory[]>([]);
+  const [earningSearchResults, setEarningSearchResults] = useState<TransactionHistory[]>([]);
 
   // State for budget advice
   const [budgetQuery, setBudgetQuery] = useState<string>(
@@ -57,9 +81,43 @@ const ExpenseEarningsTracker: React.FC = () => {
 
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [queryProcessing, setQueryProcessing] = useState<boolean>(false);
+  
   // Refs for media recorder
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+
+  // Chart data states
+  const [expenseChartData, setExpenseChartData] = useState<any[]>([]);
+  const [earningChartData, setEarningChartData] = useState<any[]>([]);
+  const [expenseBarData, setExpenseBarData] = useState<any[]>([]);
+  const [earningBarData, setEarningBarData] = useState<any[]>([]);
+
+  // Colors for charts
+  const expenseColors = ['#FF5A5F', '#FF9A52', '#FFC400', '#00A699'];
+  const earningColors = ['#2E8B57', '#32CD32', '#90EE90'];
+
+  // Load initial data when component mounts
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/budget');
+        const data = await response.json();
+        
+        setTotalExpenditure(data.total_expenditure || 0);
+        setTotalEarnings(data.total_earnings || 0);
+        setExpenseHistory(data.transaction_history_expenses || []);
+        setEarningHistory(data.transaction_history_earnings || []);
+        setExpenseChartData(data.expense_chart_data || []);
+        setEarningChartData(data.earning_chart_data || []);
+        setExpenseBarData(data.expense_chart_data || []);
+        setEarningBarData(data.earning_chart_data || []);
+      } catch (error) {
+        console.error('Error loading initial data:', error);
+      }
+    };
+
+    loadInitialData();
+  }, []);
 
   const toggleRecording = async (action: string) => {
     if (!isRecording) {
@@ -143,8 +201,17 @@ const ExpenseEarningsTracker: React.FC = () => {
           setEarningBar(trackerData.earning_bar);
           setTotalExpenditure(trackerData.total_expenditure);
           setTotalEarnings(trackerData.total_earnings);
-          setExpenseHistory(trackerData.chat_history_expenses);
-          setEarningHistory(trackerData.chat_history_earnings);
+          
+          // Use actual data from backend instead of generating random data
+          setExpenseHistory(trackerData.transaction_history_expenses);
+          setEarningHistory(trackerData.transaction_history_earnings);
+          
+          // Update chart data with actual backend data
+          setExpenseChartData(trackerData.expense_chart_data);
+          setEarningChartData(trackerData.earning_chart_data);
+          setExpenseBarData(trackerData.expense_chart_data);
+          setEarningBarData(trackerData.earning_chart_data);
+          
           setQueryProcessing(false);
         } else if (action === "budget") {
           setQueryProcessing(false);
@@ -155,268 +222,399 @@ const ExpenseEarningsTracker: React.FC = () => {
           const searchData = data as SearchResult;
           setQueryProcessing(false);
           if (action === "expense") {
-            setExpenseSearchResults(searchData.results);
+            // For search results, we'll use the existing expense history that matches the search
+            const searchResults = expenseHistory.filter(entry => 
+              searchData.results.some(result => 
+                entry.description.toLowerCase().includes(result.toLowerCase())
+              )
+            );
+            setExpenseSearchResults(searchResults);
           } else if (action === "earning") {
-            setEarningSearchResults(searchData.results);
+            // For search results, we'll use the existing earning history that matches the search
+            const searchResults = earningHistory.filter(entry => 
+              searchData.results.some(result => 
+                entry.description.toLowerCase().includes(result.toLowerCase())
+              )
+            );
+            setEarningSearchResults(searchResults);
           }
         }
       })
       .catch((error) => {
         console.error("Error:", error);
+        setQueryProcessing(false);
       });
+  };
+
+
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const formatTimeAgo = (timestamp: string) => {
+    return timestamp;
+  };
+
+  const netProfit = totalEarnings - totalExpenditure;
+
+
+
+  // Custom tooltip for charts
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-gray-800 p-3 rounded-lg border border-gray-600">
+          <p className="text-white font-semibold">{`${label}: ${formatCurrency(payload[0].value)}`}</p>
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
     <Layout activePage="budget-assistant">
-      <div className="flex flex-1 py-20">
-        {/* Content Area */}
-        <div className="flex-1 p-8 flex gap-8">
-          {/* Main Content */}
-          <div className="flex-[2] flex flex-col items-center overflow-y-auto space-y-12">
-            <div className="w-full bg-gradient-to-br from-gray-900/80 via-gray-800/80 to-gray-900/80 p-10 rounded-3xl shadow-2xl backdrop-blur-lg border-2 border-[#fccd03]/40 hover:border-[#fccd03]/60 transition-all duration-300">
-              <div className="flex gap-8">
-                {/* Left side - Mic button */}
-                <div className="flex flex-col items-center">
-                  <h2 className="text-[#fccd03] text-2xl mb-6 font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#fccd03] to-[#e3b902]">
-                    Record Your Transaction
-                  </h2>
-
-                  <button
-                    className={`group flex items-center justify-center w-24 h-24 ${
-                      isRecording
-                        ? "bg-gradient-to-r from-red-600 to-red-700"
-                        : "bg-gradient-to-r from-[#fccd03] to-[#e3b902]"
-                    } text-gray-900 rounded-full cursor-pointer text-3xl font-bold transition-all duration-300 hover:from-[#e3b902] hover:to-[#fccd03] shadow-[0_0_30px_rgba(252,205,3,0.4)] hover:shadow-[0_0_40px_rgba(252,205,3,0.6)] hover:scale-110 active:scale-95 hover:rotate-12`}
-                    onClick={() => toggleRecording("input")}
-                  >
-                    <span className="text-4xl">🎤</span>
-                  </button>
-
-                  <p className="text-center mt-4 text-[#fccd03] text-xl font-medium">
-                    {message}
+      <div className="min-h-screen bg-gray-900 p-6">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-white mb-2">Financial Dashboard</h1>
+              <p className="text-gray-400">Track your agricultural expenses and earnings</p>
+            </div>
+            <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 p-3 rounded-xl shadow-lg border border-gray-700/50">
+              <div className="flex items-center space-x-3">
+                <button
+                  className={`group flex items-center justify-center w-16 h-16 ${
+                    isRecording
+                      ? "bg-red-600 hover:bg-red-700"
+                      : "bg-blue-600 hover:bg-blue-700"
+                  } text-white rounded-full cursor-pointer transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg`}
+                  onClick={() => toggleRecording("input")}
+                >
+                  <Mic className="w-8 h-8" />
+                </button>
+                <div className="flex-1">
+                  <p className="text-gray-300 text-sm">
+                    {message || "Record your query"}
                   </p>
+                  {queryProcessing && (
+                    <div className="flex items-center space-x-2 mt-1">
+                      <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                      <p className="text-blue-400 text-xs">Processing...</p>
+                    </div>
+                  )}
                 </div>
-
-                {/* Right side - Expenses and Earnings in parallel */}
-                <div className="flex-1 flex gap-8">
-                  {/* Expenses Section */}
-                  <div className="flex-1">
-                    <h2 className="text-center text-[#fccd03] text-3xl mb-8 font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#fccd03] to-[#e3b902]">
-                      Expenses
-                    </h2>
-                    {/* <div className="flex flex-col gap-6 mb-6">
-                      {expensePie && (
-                        <img
-                          src={`data:image/png;base64,${expensePie}`}
-                          alt="Expense Pie Chart"
-                          className="w-full rounded-2xl border-2 border-[#fccd03]/40 shadow-xl hover:shadow-[#fccd03]/30 hover:scale-105 transition-all duration-300"
-                        />
-                      )}
-                      {expenseBar && (
-                        <img
-                          src={`data:image/png;base64,${expenseBar}`}
-                          alt="Expense Bar Chart"
-                          className="w-full rounded-2xl border-2 border-[#fccd03]/40 shadow-xl hover:shadow-[#fccd03]/30 hover:scale-105 transition-all duration-300"
-                        />
-                      )}
-                    </div> */}
-                    <h3 className="text-center text-[#fccd03] text-2xl font-bold">
-                      Total Expenditure: ₹{totalExpenditure}
-                    </h3>
-                  </div>
-
-                  {/* Earnings Section */}
-                  <div className="flex-1">
-                    <h2 className="text-center text-[#fccd03] text-3xl mb-8 font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#fccd03] to-[#e3b902]">
-                      Earnings
-                    </h2>
-                    {/* <div className="flex flex-col gap-6 mb-6">
-                      {earningPie && (
-                        <img
-                          src={`data:image/png;base64,${earningPie}`}
-                          alt="Earnings Pie Chart"
-                          className="w-full rounded-2xl border-2 border-[#fccd03]/40 shadow-xl hover:shadow-[#fccd03]/30 hover:scale-105 transition-all duration-300"
-                        />
-                      )}
-                      {earningBar && (
-                        <img
-                          src={`data:image/png;base64,${earningBar}`}
-                          alt="Earnings Bar Chart"
-                          className="w-full rounded-2xl border-2 border-[#fccd03]/40 shadow-xl hover:shadow-[#fccd03]/30 hover:scale-105 transition-all duration-300"
-                        />
-                      )}
-                    </div> */}
-                    <h3 className="text-center text-[#fccd03] text-2xl font-bold">
-                      Total Earnings: ₹{totalEarnings}
-                    </h3>
-                  </div>
-                  <div className="flex-1">
-                    <h2 className="text-center text-[#fccd03] text-3xl mb-8 font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#fccd03] to-[#e3b902]">
-                      Net
-                    </h2>
-                    {/* <div className="flex flex-col gap-6 mb-6">
-                      {earningPie && (
-                        <img
-                          src={`data:image/png;base64,${earningPie}`}
-                          alt="Earnings Pie Chart"
-                          className="w-full rounded-2xl border-2 border-[#fccd03]/40 shadow-xl hover:shadow-[#fccd03]/30 hover:scale-105 transition-all duration-300"
-                        />
-                      )}
-                      {earningBar && (
-                        <img
-                          src={`data:image/png;base64,${earningBar}`}
-                          alt="Earnings Bar Chart"
-                          className="w-full rounded-2xl border-2 border-[#fccd03]/40 shadow-xl hover:shadow-[#fccd03]/30 hover:scale-105 transition-all duration-300"
-                        />
-                      )}
-                    </div> */}
-                    <h3 className="text-center text-[#fccd03] text-2xl font-bold">
-                      Profit/Loss: <span className={totalEarnings - totalExpenditure >= 0 ? "text-green" : "text-red"}> ₹{totalEarnings - totalExpenditure}</span>
-                    </h3>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* <div className="w-full bg-gradient-to-br from-gray-900/80 via-gray-800/80 to-gray-900/80 p-8 rounded-3xl shadow-2xl backdrop-blur-lg border-2 border-[#fccd03]/40 hover:border-[#fccd03]/60 transition-all duration-300 transform hover:scale-[1.02]">
-              <h2 className="text-center text-[#fccd03] text-3xl mb-8 font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#fccd03] to-[#e3b902]">
-                Is there anything I can help you with managing your budgets?
-              </h2>
-
-              <button
-                className="group flex items-center justify-center mx-auto w-24 h-24 bg-gradient-to-r from-[#fccd03] to-[#e3b902] text-gray-900 rounded-full cursor-pointer text-3xl font-bold transition-all duration-300 hover:from-[#e3b902] hover:to-[#fccd03] mb-8 shadow-[0_0_30px_rgba(252,205,3,0.4)] hover:shadow-[0_0_40px_rgba(252,205,3,0.6)] hover:scale-110 active:scale-95 hover:rotate-12"
-                onClick={() => toggleRecording("budget")}
-              >
-                <span className="text-4xl">🎤</span>
-              </button>
-
-              <div className="border-2 border-[#fccd03]/40 p-8 rounded-2xl bg-gray-800/60 text-center backdrop-blur-lg shadow-2xl hover:shadow-[#fccd03]/20 hover:border-[#fccd03]/60 transition-all duration-300 transform hover:scale-[1.02]">
-                <h3 className="text-[#fccd03] text-2xl mb-6 font-bold">
-                  AI Recommendations:
-                </h3>
-                <p className="mb-4 text-[#fccd03]/90 text-lg italic">
-                  {budgetQuery}
-                </p>
-                <p className="text-[#fccd03]/90 text-lg italic">
-                  {budgetAdvice}
-                </p>
-              </div>
-            </div> */}
-            <div className="w-full bg-gradient-to-br from-gray-900/80 via-gray-800/80 to-gray-900/80 p-8 rounded-3xl shadow-2xl backdrop-blur-lg border-2 border-[#fccd03]/40 hover:border-[#fccd03]/60 transition-all duration-300 transform hover:scale-[1.02]">
-              <div className="flex flex-row gap-6 mb-6">
-                {expensePie && (
-                  <img
-                    src={`data:image/png;base64,${expensePie}`}
-                    alt="Expense Pie Chart"
-                    className="h-[420px] w-[520px] rounded-2xl border-2 border-[#fccd03]/40 shadow-xl hover:shadow-[#fccd03]/30 hover:scale-105 transition-all duration-300"
-                  />
-                )}
-                {expenseBar && (
-                  <img
-                    src={`data:image/png;base64,${expenseBar}`}
-                    alt="Expense Bar Chart"
-                    className="h-[420px] w-[520px] rounded-2xl border-2 border-[#fccd03]/40 shadow-xl hover:shadow-[#fccd03]/30 hover:scale-105 transition-all duration-300"
-                  />
-                )}
-              </div>
-              <div className="flex flex-row gap-6 mb-6">
-                {earningPie && (
-                  <img
-                    src={`data:image/png;base64,${earningPie}`}
-                    alt="Earnings Pie Chart"
-                    className="h-[420px] w-[520px] rounded-2xl border-2 border-[#fccd03]/40 shadow-xl hover:shadow-[#fccd03]/30 hover:scale-105 transition-all duration-300"
-                  />
-                )}
-                {earningBar && (
-                  <img
-                    src={`data:image/png;base64,${earningBar}`}
-                    alt="Earnings Bar Chart"
-                    className="h-[420px] w-[520px] rounded-2xl border-2 border-[#fccd03]/40 shadow-xl hover:shadow-[#fccd03]/30 hover:scale-105 transition-all duration-300"
-                  />
-                )}
               </div>
             </div>
           </div>
 
-          {/* Chat History Sidebar */}
-          <div className="flex-1 flex flex-col gap-8">
-            {/* Expense Chat History */}
-            <div className="bg-gradient-to-br from-gray-900/80 via-gray-800/80 to-gray-900/80 p-8 rounded-3xl shadow-2xl backdrop-blur-lg border-2 border-[#fccd03]/40 hover:border-[#fccd03]/60 transition-all duration-300 transform hover:scale-[1.02]">
-              <h3 className="text-center text-[#fccd03] text-2xl mb-6 font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#fccd03] to-[#e3b902]">
-                Expense Chat History
-              </h3>
-              <div className="flex justify-center mb-6">
+          {/* 3x3 Grid Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* Top Row - Summary Cards */}
+            
+            {/* Total Expenditure Card */}
+            <div className="bg-gradient-to-br from-red-800/80 to-red-900/80 p-6 rounded-xl shadow-lg border border-red-700/50">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-white/80 text-sm font-medium uppercase tracking-wide">TOTAL EXPENDITURE</h3>
+                <div className="w-8 h-8 bg-red-600/20 rounded-full flex items-center justify-center">
+                  <TrendingDown className="w-4 h-4 text-red-400" />
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-3xl font-bold text-red-400">{formatCurrency(totalExpenditure)}</span>
+                <TrendingDown className="w-5 h-5 text-red-400" />
+              </div>
+                </div>
+
+            {/* Total Earnings Card */}
+            <div className="bg-gradient-to-br from-green-800/80 to-green-900/80 p-6 rounded-xl shadow-lg border border-green-700/50">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-white/80 text-sm font-medium uppercase tracking-wide">TOTAL EARNINGS</h3>
+                <div className="w-8 h-8 bg-green-600/20 rounded-full flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-green-400" />
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-3xl font-bold text-green-400">{formatCurrency(totalEarnings)}</span>
+                <TrendingUp className="w-5 h-5 text-green-400" />
+              </div>
+                  </div>
+
+            {/* Net Profit/Loss Card */}
+            <div className={`p-6 rounded-xl shadow-lg border ${
+              netProfit >= 0 
+                ? 'bg-gradient-to-br from-green-800/80 to-green-900/80 border-green-700/50' 
+                : 'bg-gradient-to-br from-red-800/80 to-red-900/80 border-red-700/50'
+            }`}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-white/80 text-sm font-medium uppercase tracking-wide">NET PROFIT/LOSS</h3>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  netProfit >= 0 ? 'bg-green-600/20' : 'bg-red-600/20'
+                }`}>
+                  <DollarSign className={`w-4 h-4 ${netProfit >= 0 ? 'text-green-400' : 'text-red-400'}`} />
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className={`text-3xl font-bold ${netProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {formatCurrency(Math.abs(netProfit))}
+                </span>
+                <div className="text-center">
+                  <div className={`text-sm font-medium ${netProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {netProfit >= 0 ? 'Profit' : 'Loss'}
+                  </div>
+                  {netProfit >= 0 ? (
+                    <TrendingUp className="w-4 h-4 text-green-400 mx-auto" />
+                  ) : (
+                    <TrendingDown className="w-4 h-4 text-red-400 mx-auto" />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Middle Row - Expenditure Details */}
+            
+            {/* Expenditure Breakdown */}
+            <div className="bg-gradient-to-br from-red-800/80 to-red-900/80 p-6 rounded-xl shadow-lg border border-red-700/50">
+              <div className="flex items-center mb-4">
+                <Clock className="w-5 h-5 text-red-400 mr-2" />
+                <h3 className="text-white font-semibold">Expenditure Breakdown</h3>
+              </div>
+              {expenseChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={250}>
+                  <RechartsPieChart>
+                    <Pie
+                      data={expenseChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {expenseChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={expenseColors[index % expenseColors.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </RechartsPieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="w-full h-48 bg-red-800/30 rounded-lg flex items-center justify-center">
+                  <div className="text-center">
+                    <PieChart className="w-12 h-12 text-red-400 mx-auto mb-2" />
+                    <p className="text-red-300 text-sm">No data available</p>
+                  </div>
+                </div>
+              )}
+              <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                {expenseChartData.map((item, index) => (
+                  <div key={index} className="flex items-center">
+                    <div 
+                      className="w-3 h-3 rounded mr-2" 
+                      style={{ backgroundColor: expenseColors[index % expenseColors.length] }}
+                    ></div>
+                    <span className="text-white/80">{item.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Category Wise Spending */}
+            <div className="bg-gradient-to-br from-red-800/80 to-red-900/80 p-6 rounded-xl shadow-lg border border-red-700/50">
+              <div className="flex items-center mb-8">
+                <BarChart3 className="w-5 h-5 text-red-400 mr-2" />
+                <h3 className="text-white font-semibold">Category Wise Spending</h3>
+              </div>
+              {expenseBarData.length > 0 ? (
+                <ResponsiveContainer width="90%" height={300}>
+                  <BarChart data={expenseBarData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <XAxis dataKey="name" stroke="#9CA3AF" fontSize={12} />
+                    <YAxis stroke="#9CA3AF" fontSize={12} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="value" fill="#EF4444" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="w-full h-48 bg-red-800/30 rounded-lg flex items-center justify-center">
+                  <div className="text-center">
+                    <BarChart3 className="w-12 h-12 text-red-400 mx-auto mb-2" />
+                    <p className="text-red-300 text-sm">No data available</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Expense History */}
+            <div className="bg-gradient-to-br from-red-800/80 to-red-900/80 p-6 rounded-xl shadow-lg border border-red-700/50">
+              <div className="flex items-center mb-4">
+                <Clock className="w-5 h-5 text-red-400 mr-2" />
+                <h3 className="text-white font-semibold">Expense History</h3>
+          </div>
+              <div className="relative mb-4">
+                <input
+                  type="text"
+                  placeholder="Search conversations..."
+                  className="w-full bg-red-800/30 border border-red-600/50 rounded-lg px-4 py-2 text-white placeholder-red-300 text-sm"
+                />
                 <button
-                  className="w-20 h-20 bg-gradient-to-r from-[#fccd03] to-[#e3b902] text-gray-900 rounded-full text-2xl font-bold transition-all duration-300 hover:from-[#e3b902] hover:to-[#fccd03] flex items-center justify-center shadow-[0_0_30px_rgba(252,205,3,0.4)] hover:shadow-[0_0_40px_rgba(252,205,3,0.6)] hover:scale-110 active:scale-95 hover:rotate-12"
                   onClick={() => toggleRecording("expense")}
+                  className="absolute right-3 top-2.5 text-red-400 hover:text-red-300 transition-colors"
                 >
-                  🎤
+                  <Mic className="w-4 h-4" />
                 </button>
               </div>
-              <div className="max-h-[40vh] overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-[#fccd03] scrollbar-track-gray-800/60">
-                <ul className="space-y-3">
-                  {expenseHistory.map((entry, budget_index) => (
-                    <li
-                      key={`expense-${budget_index}`}
-                      className="bg-gray-800/60 p-4 rounded-xl border-2 border-[#fccd03]/40 text-[#fccd03] text-sm backdrop-blur-lg shadow-lg hover:shadow-[#fccd03]/25 hover:border-[#fccd03]/60 hover:scale-[1.02] transition-all duration-300"
-                    >
-                      {entry}
-                    </li>
-                  ))}
-                  {expenseSearchResults.map((result, budget_index) => (
-                    <li
-                      key={`expense-search-${budget_index}`}
-                      className="bg-gray-800/60 p-4 rounded-xl border-2 border-[#fccd03]/40 text-[#fccd03] text-sm backdrop-blur-lg shadow-lg hover:shadow-[#fccd03]/25 hover:border-[#fccd03]/60 hover:scale-[1.02] transition-all duration-300"
-                    >
-                      {result}
-                    </li>
-                  ))}
-                </ul>
+              <div className="space-y-3 max-h-[16rem] overflow-y-auto">
+                {[...expenseHistory, ...expenseSearchResults].map((entry, index) => (
+                  <div key={index} className="bg-red-800/30 p-3 rounded-lg border border-red-600/30">
+                    <p className="text-white text-sm mb-1">{entry.description}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-red-400 font-bold text-lg">{formatCurrency(entry.amount)}</span>
+                      <div className="flex items-center text-xs text-red-300">
+                        <span className="bg-red-600/50 px-2 py-1 rounded mr-2">{entry.category}</span>
+                        <span>{formatTimeAgo(entry.timestamp)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {expenseHistory.length === 0 && expenseSearchResults.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-red-300 text-sm">No expense history available</p>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Earnings Chat History */}
-            <div className="bg-gradient-to-br from-gray-900/80 via-gray-800/80 to-gray-900/80 p-8 rounded-3xl shadow-2xl backdrop-blur-lg border-2 border-[#fccd03]/40 hover:border-[#fccd03]/60 transition-all duration-300 transform hover:scale-[1.02]">
-              <h3 className="text-center text-[#fccd03] text-2xl mb-6 font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#fccd03] to-[#e3b902]">
-                Earnings Chat History
-              </h3>
-              <div className="flex justify-center mb-6">
+            {/* Bottom Row - Earnings Details */}
+            
+            {/* Earnings Breakdown */}
+            <div className="bg-gradient-to-br from-green-800/80 to-green-900/80 p-6 rounded-xl shadow-lg border border-green-700/50">
+              <div className="flex items-center mb-4">
+                <Clock className="w-5 h-5 text-green-400 mr-2" />
+                <h3 className="text-white font-semibold">Earnings Breakdown</h3>
+              </div>
+              {earningChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={250}>
+                  <RechartsPieChart>
+                    <Pie
+                      data={earningChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {earningChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={earningColors[index % earningColors.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </RechartsPieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="w-full h-48 bg-green-800/30 rounded-lg flex items-center justify-center">
+                  <div className="text-center">
+                    <PieChart className="w-12 h-12 text-green-400 mx-auto mb-2" />
+                    <p className="text-green-300 text-sm">No data available</p>
+                  </div>
+                </div>
+              )}
+              <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
+                {earningChartData.map((item, index) => (
+                  <div key={index} className="flex items-center">
+                    <div 
+                      className="w-3 h-3 rounded mr-2" 
+                      style={{ backgroundColor: earningColors[index % earningColors.length] }}
+                    ></div>
+                    <span className="text-white/80">{item.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Category Wise Earnings */}
+            <div className="bg-gradient-to-br from-green-800/80 to-green-900/80 p-6 rounded-xl shadow-lg border border-green-700/50">
+              <div className="flex items-center mb-8">
+                <BarChart3 className="w-5 h-5 text-green-400 mr-2" />
+                <h3 className="text-white font-semibold">Category Wise Earnings</h3>
+              </div>
+              {earningBarData.length > 0 ? (
+                <ResponsiveContainer width="90%" height={300}>
+                  <BarChart data={earningBarData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <XAxis dataKey="name" stroke="#9CA3AF" fontSize={12} />
+                    <YAxis stroke="#9CA3AF" fontSize={12} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="value" fill="#10B981" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="w-full h-48 bg-green-800/30 rounded-lg flex items-center justify-center">
+                  <div className="text-center">
+                    <BarChart3 className="w-12 h-12 text-green-400 mx-auto mb-2" />
+                    <p className="text-green-300 text-sm">No data available</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Earnings History */}
+            <div className="bg-gradient-to-br from-green-800/80 to-green-900/80 p-6 rounded-xl shadow-lg border border-green-700/50">
+              <div className="flex items-center mb-4">
+                <Clock className="w-5 h-5 text-green-400 mr-2" />
+                <h3 className="text-white font-semibold">Earnings History</h3>
+              </div>
+              <div className="relative mb-4">
+                <input
+                  type="text"
+                  placeholder="Search conversations..."
+                  className="w-full bg-green-800/30 border border-green-600/50 rounded-lg px-4 py-2 text-white placeholder-green-300 text-sm"
+                />
                 <button
-                  className="w-20 h-20 bg-gradient-to-r from-[#fccd03] to-[#e3b902] text-gray-900 rounded-full text-2xl font-bold transition-all duration-300 hover:from-[#e3b902] hover:to-[#fccd03] flex items-center justify-center shadow-[0_0_30px_rgba(252,205,3,0.4)] hover:shadow-[0_0_40px_rgba(252,205,3,0.6)] hover:scale-110 active:scale-95 hover:rotate-12"
                   onClick={() => toggleRecording("earning")}
+                  className="absolute right-3 top-2.5 text-green-400 hover:text-green-300 transition-colors"
                 >
-                  🎤
+                  <Mic className="w-4 h-4" />
                 </button>
               </div>
-              <div className="max-h-[40vh] overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-[#fccd03] scrollbar-track-gray-800/60">
-                <ul className="space-y-3">
-                  {earningHistory.map((entry, budget_index) => (
-                    <li
-                      key={`earning-${budget_index}`}
-                      className="bg-gray-800/60 p-4 rounded-xl border-2 border-[#fccd03]/40 text-[#fccd03] text-sm backdrop-blur-lg shadow-lg hover:shadow-[#fccd03]/25 hover:border-[#fccd03]/60 hover:scale-[1.02] transition-all duration-300"
-                    >
-                      {entry}
-                    </li>
-                  ))}
-                  {earningSearchResults.map((result, budget_index) => (
-                    <li
-                      key={`earning-search-${budget_index}`}
-                      className="bg-gray-800/60 p-4 rounded-xl border-2 border-[#fccd03]/40 text-[#fccd03] text-sm backdrop-blur-lg shadow-lg hover:shadow-[#fccd03]/25 hover:border-[#fccd03]/60 hover:scale-[1.02] transition-all duration-300"
-                    >
-                      {result}
-                    </li>
-                  ))}
-                </ul>
+              <div className="space-y-3 max-h-[16rem] overflow-y-auto">
+                {[...earningHistory, ...earningSearchResults].map((entry, index) => (
+                  <div key={index} className="bg-green-800/30 p-3 rounded-lg border border-green-600/30">
+                    <p className="text-white text-sm mb-1">{entry.description}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-green-400 font-bold text-lg">{formatCurrency(entry.amount)}</span>
+                      <div className="flex items-center text-xs text-green-300">
+                        <span className="bg-green-600/50 px-2 py-1 rounded mr-2">{entry.category}</span>
+                        <span>{formatTimeAgo(entry.timestamp)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {earningHistory.length === 0 && earningSearchResults.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-green-300 text-sm">No earnings history available</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
+
+
         </div>
       </div>
 
       {/* Chat Bot Button */}
       <button
         onClick={() => setIsChatOpen(!isChatOpen)}
-        className="fixed bottom-8 right-8 bg-[#fccd03] text-black p-4 rounded-full shadow-lg hover:bg-[#e6b800] transition-all duration-300 z-50"
+        className="fixed bottom-8 right-8 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all duration-300 z-50"
       >
         <svg
           className="w-6 h-6"
@@ -435,7 +633,7 @@ const ExpenseEarningsTracker: React.FC = () => {
 
       {/* Chat Bot Modal */}
       <div
-        className={`fixed bottom-24 right-8 w-[600px] h-[700px] bg-black rounded-lg shadow-2xl border border-white/10 z-50 transition-all duration-300 ease-in-out transform ${
+        className={`fixed bottom-24 right-8 w-[600px] h-[700px] bg-gray-900 rounded-lg shadow-2xl border border-gray-700 z-50 transition-all duration-300 ease-in-out transform ${
           isChatOpen
             ? "opacity-100 translate-y-0"
             : "opacity-0 translate-y-8 pointer-events-none"
@@ -443,8 +641,8 @@ const ExpenseEarningsTracker: React.FC = () => {
       >
         <div className="flex flex-col h-full">
           {/* Chat Header */}
-          <div className="flex items-center justify-between p-4 border-b border-white/10">
-            <h3 className="text-[#fccd03] font-bold">
+          <div className="flex items-center justify-between p-4 border-b border-gray-700">
+            <h3 className="text-white font-bold">
               Is there anything I can help you with managing your budgets?
             </h3>
             <button
@@ -469,25 +667,22 @@ const ExpenseEarningsTracker: React.FC = () => {
 
           {/* Chat Messages Area */}
           <div className="flex-1 overflow-y-auto p-4">
-            {/* Messages will go here */}
-            <p className="bg-[#fccd03] text-black mt-4 px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:translate-x-2">
+            <p className="bg-blue-600 text-white mt-4 px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:translate-x-2">
               {budgetQuery}
             </p>
             {queryProcessing && (
-              <div className="mx-auto my-4 w-8 h-8 border-4 border-[#fccd03] border-t-[#e3b902] rounded-full animate-spin"></div>
+              <div className="mx-auto my-4 w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
             )}
-            <div className="bg-white/10 backdrop-blur-lg rounded-xl shadow-lg p-2 mt-6 text-white transition-all duration-300 hover:shadow-2xl hover:shadow-[#fccd03]/20 hover:scale-[1.02] hover:-translate-y-1 active:scale-95">
-              {/* <h2 className="text-3xl font-bold text-[#fccd03] mb-6 transition-transform duration-300 hover:translate-x-2">Response</h2> */}
-
-              <div className="bg-black/30 rounded-lg p-8 mb-8 min-h-[300px] font-medium text-lg leading-relaxed transition-all duration-300 hover:bg-black/40">
+            <div className="bg-gray-800 rounded-xl shadow-lg p-4 mt-6 text-white transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/20 hover:scale-[1.02] hover:-translate-y-1 active:scale-95">
+              <div className="bg-gray-700 rounded-lg p-6 mb-4 min-h-[200px] font-medium text-lg leading-relaxed transition-all duration-300 hover:bg-gray-600">
                 {budgetAdvice && budgetAdvice.startsWith("AI Advice:") ? (
                   <div className="space-y-4">
-                    <h3 className="text-xl font-bold text-[#fccd03]">AI Advice:</h3>
+                    <h3 className="text-xl font-bold text-blue-400">AI Advice:</h3>
                     <div className="whitespace-pre-line">
                       {budgetAdvice.replace("AI Advice:", "").replace(/\*\*/g, "").split("\n").map((line, budget_index) => {
                         // Handle Financial Analysis and Recommendations headers
                         if (line.trim().endsWith(":")) {
-                          return <h4 key={budget_index} className="font-bold text-[#fccd03] text-xl mt-4 mb-2">{line.trim()}</h4>;
+                          return <h4 key={budget_index} className="font-bold text-blue-400 text-xl mt-4 mb-2">{line.trim()}</h4>;
                         }
                         // Handle bullet points
                         else if (line.trim().startsWith("*")) {
@@ -495,7 +690,7 @@ const ExpenseEarningsTracker: React.FC = () => {
                           if (parts.length > 1) {
                             return (
                               <div key={budget_index} className="flex ml-4 mb-2">
-                                <span className="text-[#fccd03] mr-2">•</span>
+                                <span className="text-blue-400 mr-2">•</span>
                                 <span className="font-semibold mr-2">{parts[0]}:</span>
                                 <span>{parts[1]}</span>
                               </div>
@@ -503,7 +698,7 @@ const ExpenseEarningsTracker: React.FC = () => {
                           } else {
                             return (
                               <div key={budget_index} className="flex ml-4 mb-2">
-                                <span className="text-[#fccd03] mr-2">•</span>
+                                <span className="text-blue-400 mr-2">•</span>
                                 <span>{parts[0]}</span>
                               </div>
                             );
@@ -515,7 +710,7 @@ const ExpenseEarningsTracker: React.FC = () => {
                           if (parts.length > 1) {
                             return (
                               <div key={budget_index} className="flex ml-4 mb-2">
-                                <span className="text-[#fccd03] mr-2">{parts[0].trim()}:</span>
+                                <span className="text-blue-400 mr-2">{parts[0].trim()}:</span>
                                 <span>{parts[1].trim()}</span>
                               </div>
                             );
@@ -538,56 +733,17 @@ const ExpenseEarningsTracker: React.FC = () => {
                   budgetAdvice
                 )}
               </div>
-
-              <div className="flex gap-4">
-                {/* {showPlayButton && !isPlayingResponse && (
-                    <button
-                      onClick={playResponse}
-                      className="flex-1 bg-[#fccd03] text-black px-6 py-4 rounded-lg font-semibold hover:bg-[#e3b902] transition-all duration-300 hover:scale-105 active:scale-95 text-lg shadow-lg hover:shadow-xl shadow-[#fccd03]/20"
-                    >
-                      🔊 Play Response
-                    </button>
-                  )} */}
-
-                {/* {isPlayingResponse && (
-                    <button
-                      onClick={stopResponse}
-                      className="flex-1 bg-red-500 text-white px-6 py-4 rounded-lg font-semibold hover:bg-red-600 transition-all duration-300 hover:scale-105 active:scale-95 text-lg shadow-lg hover:shadow-xl"
-                    >
-                      ⏹ Stop Response
-                    </button>
-                  )}
-
-                  <audio ref={responseAudioRef} /> */}
-              </div>
             </div>
           </div>
 
           {/* Chat Input */}
-          <div className="p-4 border-t border-white/10 mt-auto">
-            <div className="flex flex-wrap gap-2 justify-center items-center">
-              {/* {!queryRecording.isRecording ? (
-                  <button
-                    onClick={() => startRecording('query')}
-                    className="bg-[#fccd03] text-black px-3 py-3 rounded-full font-semibold hover:bg-[#e3b902] transition-all duration-300 hover:scale-105 active:scale-95 text-lg shadow-lg hover:shadow-xl shadow-[#fccd03]/20"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                    </svg>
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => stopRecording('query')}
-                    className="bg-red-500 text-white px-3 py-3 rounded-full font-semibold hover:bg-red-600 transition-all duration-300 hover:scale-105 active:scale-95 text-lg shadow-lg hover:shadow-xl"
-                  >
-                    ⏹
-                  </button>
-                )} */}
+          <div className="p-4 border-t border-gray-700 mt-auto">
+            <div className="flex justify-center">
               <button
-                className="group flex items-center justify-center mx-auto w-24 h-24 bg-gradient-to-r from-[#fccd03] to-[#e3b902] text-gray-900 rounded-full cursor-pointer text-3xl font-bold transition-all duration-300 hover:from-[#e3b902] hover:to-[#fccd03] mb-8 shadow-[0_0_30px_rgba(252,205,3,0.4)] hover:shadow-[0_0_40px_rgba(252,205,3,0.6)] hover:scale-110 active:scale-95 hover:rotate-12"
+                className="group flex items-center justify-center w-16 h-16 bg-blue-600 text-white rounded-full cursor-pointer text-2xl font-bold transition-all duration-300 hover:bg-blue-700 hover:scale-110 active:scale-95 shadow-lg"
                 onClick={() => toggleRecording("budget")}
               >
-                <span className="text-4xl">🎤</span>
+                <Mic className="w-6 h-6" />
               </button>
             </div>
           </div>

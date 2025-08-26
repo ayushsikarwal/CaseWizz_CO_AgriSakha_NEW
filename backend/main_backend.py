@@ -102,18 +102,18 @@ index_loan = pc.Index(pinecone_index_name_loan)
 df_loan = pd.read_csv("government_schemes.csv")
 text_splitter_loan = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
 df_loan['id'] = df_loan['id'].astype('object')
-for i in range(len(df_loan)):
-    string = df_loan.iloc[i]['Questions']
-    embeddings_loan = genai.embed_content(
-        model="models/text-embedding-004",
-        content=string
-    )
-    index_loan.upsert(
-        vectors=[
-            {"id": "prod" + str(i), "values": embeddings_loan['embedding']}
-        ]
-    )
-    df_loan.at[i, 'id'] = "prod" + str(i)
+# for i in range(len(df_loan)):
+#     string = df_loan.iloc[i]['Questions']
+#     embeddings_loan = genai.embed_content(
+#         model="models/text-embedding-004",
+#         content=string
+#     )
+#     index_loan.upsert(
+#         vectors=[
+#             {"id": "prod" + str(i), "values": embeddings_loan['embedding']}
+#         ]
+#     )
+#     df_loan.at[i, 'id'] = "prod" + str(i)
 
 # Pinecone index for micro_ey.py
 pinecone_index_name_gov_schemes = "no-cap"
@@ -132,18 +132,18 @@ df_gov_schemes = pd.read_csv("farmers_schemes.csv")
 df_gov_schemes['id'] = df_gov_schemes.index.astype(str) 
 text_splitter_gov_schemes = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
 df_gov_schemes['id'] = df_gov_schemes['id'].astype('object')
-for i in range(len(df_gov_schemes)):
-    string = df_gov_schemes.iloc[i]['How It Can Help You']
-    embeddings_gov_schemes = genai.embed_content(
-        model="models/text-embedding-004",
-        content=string
-    )
-    index_gov_schemes.upsert(
-        vectors=[
-            {"id": "proddd" + str(i), "values": embeddings_gov_schemes['embedding']}
-        ]
-    )
-    df_gov_schemes.at[i, 'id'] = "proddd" + str(i)
+# for i in range(len(df_gov_schemes)):
+#     string = df_gov_schemes.iloc[i]['How It Can Help You']
+#     embeddings_gov_schemes = genai.embed_content(
+#         model="models/text-embedding-004",
+#         content=string
+#     )
+#     index_gov_schemes.upsert(
+#         vectors=[
+#             {"id": "proddd" + str(i), "values": embeddings_gov_schemes['embedding']}
+#         ]
+#     )
+#     df_gov_schemes.at[i, 'id'] = "proddd" + str(i)
 
 # Global variables
 interrupt_flag = False
@@ -166,6 +166,8 @@ chat_history_earnings = [] # From eybud.py
 full_chat_history_eybud = [] # From eybud.py
 expense_data = defaultdict(lambda: defaultdict(float)) # From eybud.py
 earning_data = defaultdict(lambda: defaultdict(float)) # From eybud.py
+detailed_expense_history = [] # Detailed transaction history for expenses
+detailed_earning_history = [] # Detailed transaction history for earnings
 
 user_data_micro_ey = {} # From micro_ey.py
 INVESTMENT_OPTIONS = { # From micro_ey.py
@@ -327,19 +329,37 @@ def query_pinecone_loan(user_query):
         top_k=5,
         include_values=True
     )
+
+    def locate_row_from_vector_id(df: pd.DataFrame, vector_id: str):
+        try:
+            # 1) Try exact match on existing 'id' column
+            if 'id' in df.columns:
+                exact = df[df['id'] == vector_id]
+                if not exact.empty:
+                    return exact
+            # 2) Extract numeric suffix (e.g., prod12 -> 12, proddd34 -> 34)
+            match = re.search(r"(\d+)$", str(vector_id))
+            if match:
+                idx = int(match.group(1))
+                if 0 <= idx < len(df):
+                    return df.iloc[[idx]]
+        except Exception:
+            pass
+        return pd.DataFrame()
+
     best_match = None
     highest_score = -1
-    for result in query_results['matches']:# Renamed df to df_loan
-        product_id = result['id']
-        row = df_loan[df_loan['id'] == product_id]
-        score = result['score']
+    for result in query_results.get('matches', []):
+        product_id = result.get('id')
+        score = result.get('score', 0)
+        row = locate_row_from_vector_id(df_loan, product_id)
         if not row.empty and score > highest_score:
             best_match = row
             highest_score = score
+
     if best_match is not None and 'Answers' in best_match.columns and not best_match['Answers'].empty:
         return best_match['Answers'].values[0]
-    else:
-        return "Sorry, I couldn't find the answer to that. Please contact your local branch or call at 910-888-2341 for assistance."
+    return "Sorry, I couldn't find the answer to that. Please contact your local branch or call at 910-888-2341 for assistance."
 
 # Function from micro_ey.py, renamed
 def query_pinecone_gov_schemes(user_query):
@@ -352,12 +372,28 @@ def query_pinecone_gov_schemes(user_query):
         if not isinstance(embeddings, list) or len(embeddings) == 0:
             raise ValueError("Generated embeddings are empty or invalid.")
         query_results = index_gov_schemes.query(vector=embeddings, top_k=5, include_metadata=True) # Renamed index to index_gov_schemes
+
+        def locate_row_from_vector_id(df: pd.DataFrame, vector_id: str):
+            try:
+                if 'id' in df.columns:
+                    exact = df[df['id'] == vector_id]
+                    if not exact.empty:
+                        return exact
+                match = re.search(r"(\d+)$", str(vector_id))
+                if match:
+                    idx = int(match.group(1))
+                    if 0 <= idx < len(df):
+                        return df.iloc[[idx]]
+            except Exception:
+                pass
+            return pd.DataFrame()
+
         best_match=None
         highest_score=-1
-        for result in query_results['matches']:
-            product_id = result['id']
-            row = df_gov_schemes[df_gov_schemes['id'] == product_id]
-            score = result['score']
+        for result in query_results.get('matches', []):
+            product_id = result.get('id')
+            score = result.get('score', 0)
+            row = locate_row_from_vector_id(df_gov_schemes, product_id)
             if not row.empty and score > highest_score:
                 best_match = row
                 highest_score = score
@@ -534,12 +570,32 @@ def process_voice_input(audio_file):
     category = parsed_response.get("category", "Unknown") or "Unknown"
     sub_category = parsed_response.get("sub_category", "Unknown") or "Unknown"
 
+    # Store transaction with timestamp for better tracking
+    transaction_info = {
+        "text": translated_text,
+        "type": transaction_type,
+        "amount": amount,
+        "category": category,
+        "sub_category": sub_category,
+        "timestamp": datetime.now().isoformat()
+    }
+
     if transaction_type == "expense":
         chat_history_expenses.append(translated_text)
         expense_data[category][sub_category] += amount
+        # Store detailed transaction info for expenses
+        if 'detailed_expense_history' not in globals():
+            global detailed_expense_history
+            detailed_expense_history = []
+        detailed_expense_history.append(transaction_info)
     else:
         chat_history_earnings.append(translated_text)
         earning_data[category][sub_category] += amount
+        # Store detailed transaction info for earnings
+        if 'detailed_earning_history' not in globals():
+            global detailed_earning_history
+            detailed_earning_history = []
+        detailed_earning_history.append(transaction_info)
 
     return f"Processed: {transaction_type} of {amount} INR for {sub_category} ({category})"
 
@@ -2008,15 +2064,88 @@ def ey_play_response():
 # Routes from eybud.py
 @app.route('/budget')
 def budget_index():
-    return jsonify(
-                    expense_pie=generate_pie_chart(expense_data, "Expense Categories"),
-                    expense_bar=generate_bar_chart(expense_data, "Expense Sub-categories"),
-                    earning_pie=generate_pie_chart(earning_data, "Earning Categories"),
-                    earning_bar=generate_bar_chart(earning_data, "Earning Sub-categories"),
-                    total_expenditure=sum(sum(sub.values()) for sub in expense_data.values()),
-                    total_earnings=sum(sum(sub.values()) for sub in earning_data.values()),
-                    chat_history_expenses=chat_history_expenses,
-                    chat_history_earnings=chat_history_earnings)
+    # Calculate totals
+    total_expenditure = sum(sum(sub.values()) for sub in expense_data.values())
+    total_earnings = sum(sum(sub.values()) for sub in earning_data.values())
+    
+    # Generate chart coordinates from actual data
+    expense_chart_data = []
+    for category, sub_categories in expense_data.items():
+        for sub_category, amount in sub_categories.items():
+            if amount > 0:
+                expense_chart_data.append({
+                    "name": f"{category} - {sub_category}",
+                    "value": amount,
+                    "category": category,
+                    "sub_category": sub_category
+                })
+    
+    earning_chart_data = []
+    for category, sub_categories in earning_data.items():
+        for sub_category, amount in sub_categories.items():
+            if amount > 0:
+                earning_chart_data.append({
+                    "name": f"{category} - {sub_category}",
+                    "value": amount,
+                    "category": category,
+                    "sub_category": sub_category
+                })
+    
+    # Generate transaction history with actual data from detailed history
+    transaction_history_expenses = []
+    for i, transaction in enumerate(detailed_expense_history):
+        # Calculate time ago
+        transaction_time = datetime.fromisoformat(transaction["timestamp"])
+        time_diff = datetime.now() - transaction_time
+        if time_diff.days > 0:
+            time_ago = f"{time_diff.days} days ago"
+        elif time_diff.seconds > 3600:
+            time_ago = f"{time_diff.seconds // 3600} hours ago"
+        else:
+            time_ago = f"{time_diff.seconds // 60} minutes ago"
+        
+        transaction_history_expenses.append({
+            "description": transaction["text"],
+            "amount": transaction["amount"],
+            "category": transaction["sub_category"],
+            "timestamp": time_ago,
+            "type": "expense"
+        })
+    
+    transaction_history_earnings = []
+    for i, transaction in enumerate(detailed_earning_history):
+        # Calculate time ago
+        transaction_time = datetime.fromisoformat(transaction["timestamp"])
+        time_diff = datetime.now() - transaction_time
+        if time_diff.days > 0:
+            time_ago = f"{time_diff.days} days ago"
+        elif time_diff.seconds > 3600:
+            time_ago = f"{time_diff.seconds // 3600} hours ago"
+        else:
+            time_ago = f"{time_diff.seconds // 60} minutes ago"
+        
+        transaction_history_earnings.append({
+            "description": transaction["text"],
+            "amount": transaction["amount"],
+            "category": transaction["sub_category"],
+            "timestamp": time_ago,
+            "type": "earning"
+        })
+    
+    return jsonify({
+        "expense_pie": generate_pie_chart(expense_data, "Expense Categories"),
+        "expense_bar": generate_bar_chart(expense_data, "Expense Sub-categories"),
+        "earning_pie": generate_pie_chart(earning_data, "Earning Categories"),
+        "earning_bar": generate_bar_chart(earning_data, "Earning Sub-categories"),
+        "total_expenditure": total_expenditure,
+        "total_earnings": total_earnings,
+        "chat_history_expenses": chat_history_expenses,
+        "chat_history_earnings": chat_history_earnings,
+        "expense_chart_data": expense_chart_data,
+        "earning_chart_data": earning_chart_data,
+        "transaction_history_expenses": transaction_history_expenses,
+        "transaction_history_earnings": transaction_history_earnings
+    })
 
 @app.route('/budget_upload_audio', methods=['POST'])
 def budget_upload_audio():
@@ -2026,16 +2155,88 @@ def budget_upload_audio():
     audio_file = request.files['audio']
     response_message = process_voice_input(audio_file)
 
+    # Calculate totals
+    total_expenditure = sum(sum(sub.values()) for sub in expense_data.values())
+    total_earnings = sum(sum(sub.values()) for sub in earning_data.values())
+    
+    # Generate chart coordinates from actual data
+    expense_chart_data = []
+    for category, sub_categories in expense_data.items():
+        for sub_category, amount in sub_categories.items():
+            if amount > 0:
+                expense_chart_data.append({
+                    "name": f"{category} - {sub_category}",
+                    "value": amount,
+                    "category": category,
+                    "sub_category": sub_category
+                })
+    
+    earning_chart_data = []
+    for category, sub_categories in earning_data.items():
+        for sub_category, amount in sub_categories.items():
+            if amount > 0:
+                earning_chart_data.append({
+                    "name": f"{category} - {sub_category}",
+                    "value": amount,
+                    "category": category,
+                    "sub_category": sub_category
+                })
+    
+    # Generate transaction history with actual data from detailed history
+    transaction_history_expenses = []
+    for i, transaction in enumerate(detailed_expense_history):
+        # Calculate time ago
+        transaction_time = datetime.fromisoformat(transaction["timestamp"])
+        time_diff = datetime.now() - transaction_time
+        if time_diff.days > 0:
+            time_ago = f"{time_diff.days} days ago"
+        elif time_diff.seconds > 3600:
+            time_ago = f"{time_diff.seconds // 3600} hours ago"
+        else:
+            time_ago = f"{time_diff.seconds // 60} minutes ago"
+        
+        transaction_history_expenses.append({
+            "description": transaction["text"],
+            "amount": transaction["amount"],
+            "category": transaction["sub_category"],
+            "timestamp": time_ago,
+            "type": "expense"
+        })
+    
+    transaction_history_earnings = []
+    for i, transaction in enumerate(detailed_earning_history):
+        # Calculate time ago
+        transaction_time = datetime.fromisoformat(transaction["timestamp"])
+        time_diff = datetime.now() - transaction_time
+        if time_diff.days > 0:
+            time_ago = f"{time_diff.days} days ago"
+        elif time_diff.seconds > 3600:
+            time_ago = f"{time_diff.seconds // 3600} hours ago"
+        else:
+            time_ago = f"{time_diff.seconds // 60} minutes ago"
+        
+        transaction_history_earnings.append({
+            "description": transaction["text"],
+            "amount": transaction["amount"],
+            "category": transaction["sub_category"],
+            "timestamp": time_ago,
+            "type": "earning"
+        })
+
     return jsonify({
         "message": response_message,
         "expense_pie": generate_pie_chart(expense_data, "Expense Categories"),
         "expense_bar": generate_bar_chart(expense_data, "Expense Sub-categories"),
         "earning_pie": generate_pie_chart(earning_data, "Earning Categories"),
         "earning_bar": generate_bar_chart(earning_data, "Earning Sub-categories"),
-        "total_expenditure": sum(sum(sub.values()) for sub in expense_data.values()),
-        "total_earnings": sum(sum(sub.values()) for sub in earning_data.values()),
+        "total_expenditure": total_expenditure,
+        "total_earnings": total_earnings,
         "chat_history_expenses": chat_history_expenses,
-        "chat_history_earnings": chat_history_earnings
+        "chat_history_earnings": chat_history_earnings,
+        "expense_chart_data": expense_chart_data,
+        "earning_chart_data": earning_chart_data,
+        "transaction_history_expenses": transaction_history_expenses,
+        "transaction_history_earnings": transaction_history_earnings
     })
 
 @app.route('/budget_search_chat', methods=['POST'])
@@ -2046,9 +2247,28 @@ def budget_search_chat():
     query_text = transcribe_audio(audio_file)
     translated_query, _ = translate_to_english(query_text)
     
-    results = search_chat_history(translated_query,full_chat_history_eybud)
+    # Get the search type from the request
+    search_type = request.args.get('type', 'expense')
     
-    return jsonify({"results": results})
+    # Search in the appropriate history based on type
+    if search_type == 'expense':
+        # Search in detailed expense history
+        search_results = []
+        for transaction in detailed_expense_history:
+            if (translated_query.lower() in transaction["text"].lower() or 
+                translated_query.lower() in transaction["category"].lower() or
+                translated_query.lower() in transaction["sub_category"].lower()):
+                search_results.append(transaction["text"])
+    else:  # earning
+        # Search in detailed earning history
+        search_results = []
+        for transaction in detailed_earning_history:
+            if (translated_query.lower() in transaction["text"].lower() or 
+                translated_query.lower() in transaction["category"].lower() or
+                translated_query.lower() in transaction["sub_category"].lower()):
+                search_results.append(transaction["text"])
+    
+    return jsonify({"results": search_results})
 
 @app.route('/get_budget_advice', methods=['POST'])
 def get_budget_advice():
