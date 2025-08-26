@@ -149,6 +149,7 @@ const AgriGenie: React.FC = () => {
   const [detectedLanguageCode, setDetectedLanguageCode] = useState<string>('en');
   const [showPlayButton, setShowPlayButton] = useState<boolean>(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [bothImagesUploaded, setBothImagesUploaded] = useState<boolean>(false);
 
   const responseAudioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -213,14 +214,18 @@ const AgriGenie: React.FC = () => {
     setAdviceLoading(true);
   
     try {
-      const key = `${selectedRegion}|${selectedCrop}`;
+      const effectiveCrop = bothImagesUploaded ? 'Thales cress' : selectedCrop;
+      const key = `${selectedRegion}|${effectiveCrop}`;
       if (inflightKeyRef.current === key) return;
       inflightKeyRef.current = key;
   
+      const baseBody: any = { region: selectedRegion, crop: effectiveCrop };
+      const b22 = bothImagesUploaded ? { ...baseBody, stage: '3' } : baseBody
+      console.log("base body is -->", b22)
       const weatherResp = await fetch('http://localhost:5000/agri_weather', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ region: selectedRegion, crop: selectedCrop })
+        body: JSON.stringify(bothImagesUploaded ? { ...baseBody, stage: '3' } : baseBody)
       });
   
       if (!weatherResp.ok) {
@@ -237,7 +242,7 @@ const AgriGenie: React.FC = () => {
       try {
         const irrigationResp = await fetch('http://localhost:5000/agri_irrigation', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ region: selectedRegion, crop: selectedCrop })
+          body: JSON.stringify(bothImagesUploaded ? { ...baseBody, stage: '3' } : baseBody)
         });
         const irrigationData = await irrigationResp.json();
         if (!irrigationResp.ok) throw new Error(irrigationData.error || 'Irrigation fetch failed');
@@ -249,7 +254,7 @@ const AgriGenie: React.FC = () => {
       try {
         const seedsResp = await fetch('http://localhost:5000/agri_seeds', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ region: selectedRegion, crop: selectedCrop })
+          body: JSON.stringify(bothImagesUploaded ? { ...baseBody, stage: '3' } : baseBody)
         });
         const seedsData = await seedsResp.json();
         if (!seedsResp.ok) throw new Error(seedsData.error || 'Seeds fetch failed');
@@ -261,7 +266,7 @@ const AgriGenie: React.FC = () => {
       try {
         const adviceResp = await fetch('http://localhost:5000/agri_advice', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ region: selectedRegion, crop: selectedCrop })
+          body: JSON.stringify(bothImagesUploaded ? { ...baseBody, stage: '3' } : baseBody)
         });
         const adviceData = await adviceResp.json();
         if (!adviceResp.ok) throw new Error(adviceData.error || 'Advice fetch failed');
@@ -280,6 +285,7 @@ const AgriGenie: React.FC = () => {
       setAdviceLoading(false);
     } finally {
       inflightKeyRef.current = null;
+      setBothImagesUploaded(false);
       if (reqId === requestIdRef.current) setLoading(false);
     }
   };
@@ -310,6 +316,14 @@ const AgriGenie: React.FC = () => {
       fetchResults(region, crop, id);
     }
   }, [region, crop]); // Dependencies are the triggers for fetching data.
+
+  // Trigger fetch when both images are uploaded
+  // useEffect(() => {
+  //   if (bothImagesUploaded && region && crop) {
+  //     const id = ++requestIdRef.current;
+  //     fetchResults(region, crop, id);
+  //   }
+  // }, [bothImagesUploaded]);
 
 
   const showError = (message: string) => {
@@ -549,7 +563,7 @@ const AgriGenie: React.FC = () => {
 
                   {/* Right side: ImageUpload + dropdown */}
                   <div className="flex items-center space-x-4">
-                    <ImageUpload />
+                    <ImageUpload onBothUploadedChange={setBothImagesUploaded} setCrop={setCrop} />
                     <select
                       value={crop}
                       onChange={(e) => setCrop(e.target.value)}

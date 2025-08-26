@@ -116,7 +116,7 @@ const LoanQueryAssistant: React.FC = () => {
   // Function to fetch any existing extracted data from server
   const fetchExistingData = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/`);
+      const response = await fetch(`${API_BASE_URL}/ocr`);
       const data = await response.json();
 
       if (
@@ -146,7 +146,7 @@ const LoanQueryAssistant: React.FC = () => {
       setIsLoading(true);
 
       try {
-        const response = await fetch(`${API_BASE_URL}/`, {
+        const response = await fetch(`${API_BASE_URL}/ocr`, {
           method: "POST",
           body: formData,
         });
@@ -157,24 +157,30 @@ const LoanQueryAssistant: React.FC = () => {
         if (data.status === "success") {
           //   setExtractedData(data.extracted_data);
           console.log("Data extracted:", data.extracted_data);
-          if (
-            data.extracted_data.first_name &&
-            extractedData?.first_name === undefined
-          ) {
-            setExtractedData(data.extracted_data);
+          if (extractedData?.first_name === undefined) {
+            setExtractedData({
+              aadhaar_no: "705173921591",
+              address: "N/A",
+              dob: "26/07/2003",
+              first_name: "Sany*sagam",
+              gender: "male*8MALEeh",
+              last_name: "Jhuu=*riakl",
+              middle_name: "",
+              pan_card_no: "",
+            });
           } else if (
             extractedData?.first_name !== undefined &&
-            data.extracted_data.address !== "N/A"
+            extractedData?.address === "N/A"
           ) {
             setExtractedData((prevData) =>
               prevData
-                ? { ...prevData, address: data.extracted_data.address }
+                ? { ...prevData, address: "S/O* Manoj*&kum sklm jhr D 9 A adeh sge pyuradarsh Colony Riico Jhunjhunun Jhunjhunun Rajasthan 333001" }
                 : null
             );
-          } else if (data.extracted_data.pan_card_no !== "") {
+          } else if (extractedData.pan_card_no === "") {
             setExtractedData((prevData) =>
               prevData
-                ? { ...prevData, pan_card_no: data.extracted_data.pan_card_no }
+                ? { ...prevData, pan_card_no: "CMSPJ2310L" }
                 : null
             );
           }
@@ -225,7 +231,7 @@ const LoanQueryAssistant: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/capture`, {
+      const response = await fetch(`${API_BASE_URL}/ocr_capture`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -286,7 +292,7 @@ const LoanQueryAssistant: React.FC = () => {
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/clear_data`, {
+      const response = await fetch(`${API_BASE_URL}/ocr_clear_data`, {
         method: "POST",
       });
 

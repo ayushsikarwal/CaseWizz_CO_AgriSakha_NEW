@@ -7,8 +7,7 @@ import tempfile
 import json
 import io
 import re
-# import pytesseract
-# import re
+import pytesseract
 from io import BytesIO
 from pydub import AudioSegment
 import numpy as np
@@ -46,8 +45,8 @@ from rapidfuzz import process as fuzz_process
 import matplotlib as mpl
 from matplotlib.patches import Patch
 from matplotlib.patheffects import withStroke
-# from PIL import Image
-# import cv2
+from PIL import Image
+import cv2
 from bs4 import BeautifulSoup
 
 
@@ -208,17 +207,17 @@ INDIAN_STATES = {
 }
 
 # Tesseract OCR setup
-# pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe" # From ocr.py
-# UPLOAD_FOLDER = 'static/uploads' # From ocr.py
-# ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'bmp'} # From ocr.py
-# app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER # From ocr.py
+pytesseract.pytesseract.tesseract_cmd = r"/opt/homebrew/bin/tesseract" # From ocr.py
+UPLOAD_FOLDER = 'static/uploads' # From ocr.py
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'bmp'} # From ocr.py
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER # From ocr.py
 
-# if not os.path.exists(UPLOAD_FOLDER):
-#     os.makedirs(UPLOAD_FOLDER)
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
-# print("the version of tesseract is : -->")
-# print(pytesseract.get_tesseract_version())
-# print(pytesseract.__file__)
+print("the version of tesseract is : -->")
+print(pytesseract.get_tesseract_version())
+print(pytesseract.__file__)
 
 # Langchain template for ey_loan.py
 template_loan = """You are an intelligent and human-like assistant that answers customer queries related to movie and TV show recommendations on Netflix.
@@ -866,70 +865,70 @@ def search_chat_history(audio_file, full_chat_history_eybud): # Renamed full_cha
         return []
 
 # Function from ocr.py
-# def allowed_file(filename):
-#     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # Function from ocr.py
-# def extract_text_from_image(image_path):
-#     img = cv2.imread(image_path)
-#     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-#     text = pytesseract.image_to_string(gray, config='--psm 6')
-#     print("Extracted Text:", text)
-#     return text
+def extract_text_from_image(image_path):
+    img = cv2.imread(image_path)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    text = pytesseract.image_to_string(gray, config='--psm 6')
+    print("Extracted Text:", text)
+    return text
 
 # Function from ocr.py
-# def extract_relevant_data(ocr_text):
-#     data = {
-#         "first_name": "",
-#         "middle_name": "",
-#         "last_name": "",
-#         "address": "",
-#         "aadhaar_no": "",
-#         "dob": "",
-#         "gender": "",
-#         "pan_card_no": "",
-#     }
-#     clean_text = re.sub(r"[^A-Za-z0-9/\s]", " ", ocr_text)
-#     clean_text = re.sub(r"\s+", " ", clean_text).strip()
-#     aadhaar_match = re.search(r"\b\d{4} \d{4} \d{4}\b", ocr_text)
-#     if aadhaar_match:
-#         data["aadhaar_no"] = aadhaar_match.group(0).replace(" ", "")
-#     prompt = (
-#             f"You will be given a clean OCR sentence. You need to provide me name of the person out of that sentence and the name will most likely lie in between government of India and the Date of birth. The address will be found in Address section of the image and if it doesnt contain that then you should return N/A only for the address. The name will be indian name.\n"
-#             f"First Name: This is the first Name of the person.\n"
-#             f"Last Name: This is the last Name of the person.\n"
-#             f"Address: This is the address of the person.\n"
-#             f"Gender: This is the gender of a person either MALE or FEMALE.\n"
-#             f"Clean Sentence: {clean_text}"
-#     )
-#     llm_response = model_ocr.invoke(prompt) # Renamed llm to model_ocr
-#     response_content = llm_response.content.strip()
-#     print("Response Content:", response_content)
-#     first_name_match = re.search(r"First Name:\s*(\w+)", response_content)
-#     last_name_match = re.search(r"Last Name:\s*(\w+)", response_content)
-#     if first_name_match and last_name_match:
-#         data["first_name"] = first_name_match.group(1)
-#         data["last_name"] = last_name_match.group(1)
-#     else:
-#         data["first_name"] = ""
-#         data["last_name"] = ""
-#     dob_match = re.search(r"\b\d{2}/\d{2}/\d{4}\b", ocr_text)
-#     if dob_match:
-#         data["dob"] = dob_match.group(0)
-#     gender_match = re.search(r"Gender:\s*(\w+)", response_content)
-#     if gender_match:
-#         data["gender"] = gender_match.group(1)
-#     else:
-#         data["gender"] = "MALE"
-#     address_match = re.search(r"Address:\s*(.+?)(?=$|\n)", response_content)
-#     if address_match:
-#         data["address"] = address_match.group(1).strip()
-#     else:
-#         data["address"] = "N/A"
-#     pan_match = re.search(r"\b[A-Z]{5}[0-9]{4}[A-Z]{1}\b", ocr_text)
-#     if pan_match:
-#         data["pan_card_no"] = pan_match.group(0)
-#     return data
+def extract_relevant_data(ocr_text):
+    data = {
+        "first_name": "",
+        "middle_name": "",
+        "last_name": "",
+        "address": "",
+        "aadhaar_no": "",
+        "dob": "",
+        "gender": "",
+        "pan_card_no": "",
+    }
+    clean_text = re.sub(r"[^A-Za-z0-9/\s]", " ", ocr_text)
+    clean_text = re.sub(r"\s+", " ", clean_text).strip()
+    aadhaar_match = re.search(r"\b\d{4} \d{4} \d{4}\b", ocr_text)
+    if aadhaar_match:
+        data["aadhaar_no"] = aadhaar_match.group(0).replace(" ", "")
+    prompt = (
+            f"You will be given a clean OCR sentence. You need to provide me name of the person out of that sentence and the name will most likely lie in between government of India and the Date of birth. The address will be found in Address section of the image and if it doesnt contain that then you should return N/A only for the address. The name will be indian name.\n"
+            f"First Name: This is the first Name of the person.\n"
+            f"Last Name: This is the last Name of the person.\n"
+            f"Address: This is the address of the person.\n"
+            f"Gender: This is the gender of a person either MALE or FEMALE.\n"
+            f"Clean Sentence: {clean_text}"
+    )
+    llm_response = model_ocr.generate_content(prompt) # Renamed llm to model_ocr
+    response_content = llm_response.text.strip()
+    print("Response Content:", response_content)
+    first_name_match = re.search(r"First Name:\s*(\w+)", response_content)
+    last_name_match = re.search(r"Last Name:\s*(\w+)", response_content)
+    if first_name_match and last_name_match:
+        data["first_name"] = first_name_match.group(1)
+        data["last_name"] = last_name_match.group(1)
+    else:
+        data["first_name"] = ""
+        data["last_name"] = ""
+    dob_match = re.search(r"\b\d{2}/\d{2}/\d{4}\b", ocr_text)
+    if dob_match:
+        data["dob"] = dob_match.group(0)
+    gender_match = re.search(r"Gender:\s*(\w+)", response_content)
+    if gender_match:
+        data["gender"] = gender_match.group(1)
+    else:
+        data["gender"] = "MALE"
+    address_match = re.search(r"Address:\s*(.+?)(?=$|\n)", response_content)
+    if address_match:
+        data["address"] = address_match.group(1).strip()
+    else:
+        data["address"] = "N/A"
+    pan_match = re.search(r"\b[A-Z]{5}[0-9]{4}[A-Z]{1}\b", ocr_text)
+    if pan_match:
+        data["pan_card_no"] = pan_match.group(0)
+    return data
 
 # AgriGenie functions
 def get_enhanced_weather_data(region):
@@ -2411,94 +2410,94 @@ def micro_government_schemes():
     })
 
 # Routes from ocr.py
-# @app.route('/ocr', methods=['GET', 'POST'])
-# def ocr_index():
-#     if request.method == 'POST':
-#         if 'file' not in request.files:
-#             return jsonify({"status": "error", "message": "No file part"}), 400
+@app.route('/ocr', methods=['GET', 'POST'])
+def ocr_index():
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            return jsonify({"status": "error", "message": "No file part"}), 400
             
-#         file = request.files['file']
+        file = request.files['file']
         
-#         if file and allowed_file(file.filename):
-#             filename = secure_filename(file.filename)
-#             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-#             file.save(file_path)
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
             
-#             ocr_text = extract_text_from_image(file_path)
+            ocr_text = extract_text_from_image(file_path)
             
-#             extracted_data = extract_relevant_data(ocr_text)
+            extracted_data = extract_relevant_data(ocr_text)
             
-#             if 'stored_data' not in session:
-#                 session['stored_data'] = {}
+            if 'stored_data' not in session:
+                session['stored_data'] = {}
                 
-#             if 'first_name' not in session['stored_data']:
-#                 session['stored_data']['first_name'] = extracted_data.get('first_name', '')
-#             if 'last_name' not in session['stored_data']:
-#                 session['stored_data']['last_name'] = extracted_data.get('last_name', '')
-#             if 'gender' not in session['stored_data']:
-#                 session['stored_data']['gender'] = extracted_data.get('gender', '')
+            if 'first_name' not in session['stored_data']:
+                session['stored_data']['first_name'] = extracted_data.get('first_name', '')
+            if 'last_name' not in session['stored_data']:
+                session['stored_data']['last_name'] = extracted_data.get('last_name', '')
+            if 'gender' not in session['stored_data']:
+                session['stored_data']['gender'] = extracted_data.get('gender', '')
 
-#             session['stored_data']['address'] = extracted_data.get('address', '')
+            session['stored_data']['address'] = extracted_data.get('address', '')
 
-#             for key in ['middle_name', 'aadhaar_no', 'dob', 'pan_card_no']:
-#                 if key not in session['stored_data']:
-#                     session['stored_data'][key] = extracted_data.get(key, '')
+            for key in ['middle_name', 'aadhaar_no', 'dob', 'pan_card_no']:
+                if key not in session['stored_data']:
+                    session['stored_data'][key] = extracted_data.get(key, '')
             
-#             session.modified = True
+            session.modified = True
             
-#             return jsonify({
-#                 "status": "success",
-#                 "extracted_data": session['stored_data'],
-#                 "filename": filename
-#             })
+            return jsonify({
+                "status": "success",
+                "extracted_data": session['stored_data'],
+                "filename": filename
+            })
     
-#     return jsonify({
-#         "status": "success",
-#         "extracted_data": session.get('stored_data', {})
-#     })
+    return jsonify({
+        "status": "success",
+        "extracted_data": session.get('stored_data', {})
+    })
 
-# @app.route('/ocr_capture', methods=['POST'])
-# def ocr_capture_image():
-#     upload_folder = app.config['UPLOAD_FOLDER']
-#     if not os.path.exists(upload_folder):
-#         os.makedirs(upload_folder)
+@app.route('/ocr_capture', methods=['POST'])
+def ocr_capture_image():
+    upload_folder = app.config['UPLOAD_FOLDER']
+    if not os.path.exists(upload_folder):
+        os.makedirs(upload_folder)
     
-#     data = request.get_json()
-#     if not data or 'image' not in data:
-#         return jsonify({"status": "error", "message": "No image data provided"}), 400
+    data = request.get_json()
+    if not data or 'image' not in data:
+        return jsonify({"status": "error", "message": "No image data provided"}), 400
         
-#     image_data = data['image']
+    image_data = data['image']
     
-#     try:
-#         imgdata = base64.b64decode(image_data.split(',')[1])
-#         image = Image.open(io.BytesIO(imgdata))
+    try:
+        imgdata = base64.b64decode(image_data.split(',')[1])
+        image = Image.open(io.BytesIO(imgdata))
         
-#         filename = "captured_image.jpg"
-#         file_path = os.path.join(upload_folder, filename)
-#         image.save(file_path)
+        filename = "captured_image.jpg"
+        file_path = os.path.join(upload_folder, filename)
+        image.save(file_path)
         
-#         ocr_text = extract_text_from_image(file_path)
+        ocr_text = extract_text_from_image(file_path)
         
-#         extracted_data = extract_relevant_data(ocr_text)
+        extracted_data = extract_relevant_data(ocr_text)
         
-#         if 'stored_data' not in session:
-#             session['stored_data'] = {}
+        if 'stored_data' not in session:
+            session['stored_data'] = {}
             
-#         session['stored_data'].update(extracted_data)
-#         session.modified = True
+        session['stored_data'].update(extracted_data)
+        session.modified = True
         
-#         return jsonify({
-#             "status": "success",
-#             "extracted_data": extracted_data,
-#             "filename": filename
-#         })
-#     except Exception as e:
-#         return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({
+            "status": "success",
+            "extracted_data": extracted_data,
+            "filename": filename
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
-# @app.route('/ocr_clear_data', methods=['POST'])
-# def ocr_clear_data():
-#     session.pop('stored_data', None)
-#     return jsonify({"status": "success", "message": "Data cleared successfully"})
+@app.route('/ocr_clear_data', methods=['POST'])
+def ocr_clear_data():
+    session.pop('stored_data', None)
+    return jsonify({"status": "success", "message": "Data cleared successfully"})
 
 @app.route('/ey_main_news')
 def ey_main_news():
@@ -2687,6 +2686,15 @@ def agri_weather():
         data = request.get_json()
         region = data.get('region', '')
         crop = data.get('crop', '')
+        stage = data.get('stage', None)
+        if stage is not None:
+            disease = "x"
+        else:
+            disease = "no diseases found"
+
+        print(f"Stage is -->{stage}")
+        print(f"Disease is -->{disease}") 
+
         if not region:
             return jsonify({'error': 'Region is required'}), 400
 

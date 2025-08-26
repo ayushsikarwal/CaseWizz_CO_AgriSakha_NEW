@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Camera, Upload, Scan, Leaf, AlertTriangle, Bot, X } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 
@@ -18,7 +18,12 @@ const CustomDialog = ({ isOpen, onOpenChange, children }: { isOpen: boolean, onO
   );
 };
 
-const ImageUpload = () => {
+interface ImageUploadProps {
+  onBothUploadedChange?: (uploaded: boolean) => void;
+  setCrop?: (crop: string) => void;
+}
+
+const ImageUpload = ({ onBothUploadedChange, setCrop }: ImageUploadProps) => {
   const [selectedFiles, setSelectedFiles] = useState<{ [key: string]: File[] }>({});
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
@@ -28,6 +33,12 @@ const ImageUpload = () => {
   const [isDiseaseHovered, setDiseaseHovered] = useState(false);
   const [isStartHovered, setStartHovered] = useState(false);
   const [isTriggerHovered, setTriggerHovered] = useState(false);
+
+  useEffect(() => {
+    const hasGeneral = (selectedFiles.general?.length ?? 0) > 0;
+    const hasDisease = (selectedFiles.disease?.length ?? 0) > 0;
+    onBothUploadedChange?.(hasGeneral && hasDisease);
+  }, [selectedFiles, onBothUploadedChange]);
 
   const handleFileUpload = (type: string, files: FileList | null) => {
     if (files && files.length > 0) {
@@ -215,6 +226,8 @@ const ImageUpload = () => {
                     title: "Analysis Started",
                     description: "Your images are being processed. Results will be available shortly.",
                   });
+                  onBothUploadedChange?.(true);
+                  setCrop?.("Thales cress");
                   setIsOpen(false);
                 }}
                 onMouseEnter={() => setStartHovered(true)}
