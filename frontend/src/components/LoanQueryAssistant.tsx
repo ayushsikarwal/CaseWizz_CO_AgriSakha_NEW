@@ -639,6 +639,60 @@ const LoanQueryAssistant: React.FC = () => {
             </div>
 
             {/* Document Capture Section */}
+            <div className="flex gap-6">
+              <div className="flex-1 bg-white/10 backdrop-blur-lg rounded-xl shadow-lg p-6 border border-white/10">
+                <h2 className="text-2xl font-semibold text-[#fccd03] mb-4">Capture Using Webcam</h2>
+                <button
+                  onClick={toggleWebcam}
+                  className="w-full bg-[#fccd03] text-black px-6 py-3 rounded-lg font-semibold hover:bg-[#e3b902] transition-all duration-300 hover:scale-105"
+                >
+                  {showWebcam ? "Hide Webcam" : "Show Webcam"}
+                </button>
+
+                {showWebcam && (
+                  <div className="mt-4">
+                    <video
+                      ref={videoRef}
+                      width="100%"
+                      height="auto"
+                      autoPlay
+                      className="border border-white/10 rounded-lg mb-4"
+                    />
+                    <button
+                      onClick={captureImage}
+                      className="w-full bg-[#fccd03] text-black px-6 py-3 rounded-lg font-semibold hover:bg-[#e3b902] transition-all"
+                      disabled={isLoading}
+                    >
+                      📸 Capture Image
+                    </button>
+                    <canvas ref={canvasRef} style={{ display: "none" }} />
+                  </div>
+                )}
+              </div>
+
+              {/* Upload Section */}
+              <div className="flex-1 bg-white/10 backdrop-blur-lg rounded-xl shadow-lg p-6 border border-white/10">
+                <h2 className="text-2xl font-semibold text-[#fccd03] mb-4">Upload Document</h2>
+                <form onSubmit={handleFileUpload} encType="multipart/form-data">
+                  <div className="mb-4">
+                    <input
+                      type="file"
+                      name="file"
+                      accept="image/*"
+                      ref={fileInputRef}
+                      className="w-full p-3 bg-black/30 border border-white/10 rounded-lg text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#fccd03] file:text-black hover:file:bg-[#e3b902] file:font-semibold"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full bg-[#fccd03] text-black px-6 py-3 rounded-lg font-semibold hover:bg-[#e3b902] transition-all"
+                    disabled={isLoading}
+                  >
+                    📤 Upload Document
+                  </button>
+                </form>
+              </div>
+            </div>
             
           </div>
 
@@ -695,7 +749,7 @@ const LoanQueryAssistant: React.FC = () => {
               </div>
             </div>
             {/* Extracted Data Section */}
-            {/* <div className="bg-white/10 backdrop-blur-lg rounded-xl shadow-lg p-6 border border-white/10">
+            <div className="bg-white/10 backdrop-blur-lg rounded-xl shadow-lg p-6 border border-white/10">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-semibold text-[#fccd03]">Extracted Data</h2>
                 {extractedData && (
@@ -747,7 +801,7 @@ const LoanQueryAssistant: React.FC = () => {
                   No data extracted yet. Upload an image or use the webcam.
                 </p>
               )}
-            </div> */}
+            </div>
           </div>
         </div>
       </div>
