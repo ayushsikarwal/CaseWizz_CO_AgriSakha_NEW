@@ -24,7 +24,6 @@ https://drive.google.com/drive/folders/1DczLIUB--G7M3A9KC132PffXMvOKU5Hp?usp=sha
 
 ![WhatsApp Image 2025-08-18 at 23 16 46_66f2d63a](https://github.com/user-attachments/assets/7bba1ab5-559f-43f3-be79-891b42464a74)
 
-![WhatsApp Image 2025-08-19 at 06 46 02_dd329e26](https://github.com/user-attachments/assets/029cad6a-1ba3-4235-ab49-2661d61566ae)
 
 ![WhatsApp Image 2025-08-18 at 23 56 11_344cbfc4](https://github.com/user-attachments/assets/7528c90d-734b-4967-af55-ad2e2e15181c)
 
@@ -445,6 +444,7 @@ For support and queries, please reach out through:
 ---
 
 **AgriSakha** - Empowering Farmers with AI-Driven Solutions 🌱
+
 
 
 
