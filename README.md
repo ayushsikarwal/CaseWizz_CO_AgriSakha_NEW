@@ -410,9 +410,9 @@ This project is developed as part of the Capital One CaseWizz competition. All r
 
 ## 👥 Team
 
-- **Ayush Sikarwal**
-- **Sanyam Jhuria**
-- **Siddharth Asthana**
+- **Ayush Sikarwal (Developer)**
+- **Sanyam Jhuria (UI/UX)**
+- **Siddharth Asthana (Prod. Man.)**
 
 ## 🙏 Acknowledgments
 
