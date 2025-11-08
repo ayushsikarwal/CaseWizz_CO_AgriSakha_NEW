@@ -24,7 +24,7 @@ https://drive.google.com/drive/folders/1DczLIUB--G7M3A9KC132PffXMvOKU5Hp?usp=sha
 
 ![WhatsApp Image 2025-08-18 at 23 16 46_66f2d63a](https://github.com/user-attachments/assets/7bba1ab5-559f-43f3-be79-891b42464a74)
 
-![Screenshot 2025-11-08 at 4.00.16 PM](frontend/public/Screenshot 2025-11-08 at 4.00.16 PM.png)
+<img width="2544" height="1317" alt="Screenshot 2025-08-19 at 6 51 49 PM" src="./frontend/public/Screenshot 2025-11-08 at 4.00.16 PM.png" />
 
 ![WhatsApp Image 2025-08-18 at 23 56 11_344cbfc4](https://github.com/user-attachments/assets/7528c90d-734b-4967-af55-ad2e2e15181c)
 
