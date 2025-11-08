@@ -2,8 +2,8 @@
 
 AgriSakha is an AI-powered multilingual platform that empowers farmers with personalized agricultural news, real-time crop price forecasts, and voice-based financial guidance. By combining AI insights with human mentorship, it bridges the gap in localized information and financial literacy, fostering a more resilient and profitable farming sector.
 
-# Video, Images, Presentation Demonstration of the Prototype:
-https://drive.google.com/drive/folders/1DczLIUB--G7M3A9KC132PffXMvOKU5Hp?usp=sharing
+<!-- # Video, Images, Presentation Demonstration of the Prototype:
+https://drive.google.com/drive/folders/1DczLIUB--G7M3A9KC132PffXMvOKU5Hp?usp=sharing -->
 
 # Images of Prototype
 ![WhatsApp Image 2025-08-18 at 23 09 53_73414274](https://github.com/user-attachments/assets/19c5bdbc-007f-4539-8e8a-b1b3613a6410)
@@ -24,7 +24,7 @@ https://drive.google.com/drive/folders/1DczLIUB--G7M3A9KC132PffXMvOKU5Hp?usp=sha
 
 ![WhatsApp Image 2025-08-18 at 23 16 46_66f2d63a](https://github.com/user-attachments/assets/7bba1ab5-559f-43f3-be79-891b42464a74)
 
-<img src="./frontend/public/Screenshot 2025-11-08 at 4.00.16 PM.png" width="2544" height="1317">
+![Screenshot 2025-11-08 at 4.00.16 PM](frontend/public/Screenshot 2025-11-08 at 4.00.16 PM.png)
 
 ![WhatsApp Image 2025-08-18 at 23 56 11_344cbfc4](https://github.com/user-attachments/assets/7528c90d-734b-4967-af55-ad2e2e15181c)
 
